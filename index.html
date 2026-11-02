@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1D6A5A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>NLP Coach Oefenapp</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: één smalle kolom zoals een oefenboekje; onderin een vaste tabbalk; de oefenkaart neemt het scherm over. */
+:root{
+  --bg:#EEF2EF; --surface:#FFFFFF; --sunk:#E3E9E5; --ink:#18211E; --muted:#56635E; --line:#D3DCD7;
+  --accent:#1D6A5A; --accent-ink:#FFFFFF; --accent-soft:#D6EBE4; --kite:#C9742A; --kite-soft:#F6E6D6;
+  --good:#2C7A4B; --good-soft:#DDF0E3; --bad:#A8443A; --bad-soft:#F6E1DE;
+  --display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111715; --surface:#19211E; --sunk:#222C28; --ink:#E5ECE8; --muted:#9BA9A3; --line:#2D3935;
+  --accent:#5DC0A6; --accent-ink:#0E1A16; --accent-soft:#1E3A33; --kite:#E39A55; --kite-soft:#3A2A1C;
+  --good:#6CCB8F; --good-soft:#1C3527; --bad:#EE8B80; --bad-soft:#3D2220; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111715; --surface:#19211E; --sunk:#222C28; --ink:#E5ECE8; --muted:#9BA9A3; --line:#2D3935;
+  --accent:#5DC0A6; --accent-ink:#0E1A16; --accent-soft:#1E3A33; --kite:#E39A55; --kite-soft:#3A2A1C;
+  --good:#6CCB8F; --good-soft:#1C3527; --bad:#EE8B80; --bad-soft:#3D2220; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg); color:var(--ink); font-family:var(--body); font-size:16px; line-height:1.5;
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));}
+.wrap{max-width:600px; margin:0 auto; padding-block:20px 110px}
+h1,h2,h3{font-family:var(--display); text-wrap:balance; margin:0; line-height:1.15}
+h1{font-size:1.75rem; font-weight:700; letter-spacing:-.01em}
+h2{font-size:1.25rem; font-weight:700}
+h3{font-size:1.05rem; font-weight:700}
+p{margin:0}
+.eyebrow{font-family:var(--mono); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.muted{color:var(--muted)}
+.stack{display:flex; flex-direction:column; gap:16px}
+.stack-s{display:flex; flex-direction:column; gap:8px}
+.row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+button{font:inherit; color:inherit; cursor:pointer}
+button:focus-visible,.opt:focus-visible{outline:3px solid var(--kite); outline-offset:2px}
+
+/* Header */
+.top{display:flex; justify-content:space-between; align-items:flex-end; gap:12px}
+.streak{font-family:var(--mono); font-size:.8rem; color:var(--muted); text-align:right; font-variant-numeric:tabular-nums}
+.streak b{display:block; font-family:var(--display); font-size:1.5rem; color:var(--ink)}
+
+/* Today card */
+.today{background:var(--accent); color:var(--accent-ink); border-radius:var(--r); padding:20px; display:flex; flex-direction:column; gap:14px}
+.today h2{font-size:1.5rem}
+.today .sub{opacity:.85}
+.seg{display:flex; background:rgba(0,0,0,.14); border-radius:999px; padding:4px; gap:4px; width:max-content; max-width:100%}
+.seg button{border:0; background:transparent; color:inherit; padding:6px 14px; border-radius:999px; font-family:var(--mono); font-size:.85rem}
+.seg button[aria-pressed="true"]{background:var(--accent-ink); color:var(--accent)}
+.go{border:0; background:var(--accent-ink); color:var(--accent); font-family:var(--display); font-weight:700; font-size:1.1rem; padding:14px 18px; border-radius:12px; text-align:left; display:flex; justify-content:space-between; align-items:center}
+
+/* Kompas strip */
+.kompas{display:grid; grid-template-columns:repeat(4,1fr); gap:6px}
+.kompas div{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:8px; font-size:.78rem; line-height:1.25; text-align:center; color:var(--muted)}
+.kompas b{display:block; color:var(--ink); font-size:.82rem}
+
+/* Module + deck list */
+.module{display:flex; flex-direction:column; gap:8px}
+.module-h{display:flex; justify-content:space-between; align-items:baseline; gap:8px}
+.deck{display:grid; grid-template-columns:1fr auto; gap:4px 12px; align-items:center; width:100%; text-align:left;
+  background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px}
+.deck:hover{border-color:var(--accent)}
+.deck .t{font-weight:700; min-width:0}
+.deck .d{grid-column:1; font-size:.85rem; color:var(--muted); min-width:0}
+.deck .n{grid-row:1 / span 2; grid-column:2; font-family:var(--mono); font-size:.8rem; color:var(--muted); text-align:right; font-variant-numeric:tabular-nums}
+.bar{height:6px; background:var(--sunk); border-radius:99px; overflow:hidden; grid-column:1 / -1}
+.bar i{display:block; height:100%; background:var(--accent); border-radius:99px}
+.chip{display:inline-block; font-family:var(--mono); font-size:.68rem; letter-spacing:.04em; text-transform:uppercase; padding:2px 7px; border-radius:99px; background:var(--kite-soft); color:var(--kite); vertical-align:middle}
+
+/* Bottom nav */
+nav.tabs{position:fixed; left:0; right:0; bottom:0; background:var(--surface); border-top:1px solid var(--line);
+  padding:8px max(16px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); z-index:5}
+nav.tabs .in{max-width:600px; margin:0 auto; display:grid; grid-template-columns:repeat(4,1fr); gap:4px}
+nav.tabs button{border:0; background:transparent; padding:8px 4px; border-radius:10px; font-size:.85rem; color:var(--muted); display:flex; flex-direction:column; align-items:center; gap:2px}
+nav.tabs button svg{width:22px; height:22px}
+nav.tabs button[aria-current="page"]{color:var(--accent); background:var(--accent-soft); font-weight:700}
+
+/* Session */
+.session{position:fixed; inset:0; background:var(--bg); z-index:10; overflow-y:auto;
+  padding:calc(12px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))}
+.session .in{max-width:600px; margin:0 auto; display:flex; flex-direction:column; gap:16px; min-height:100%}
+.s-head{display:flex; align-items:center; gap:12px}
+.close{border:1px solid var(--line); background:var(--surface); width:40px; height:40px; border-radius:50%; display:grid; place-items:center; flex:none}
+.progress{flex:1; height:8px; background:var(--sunk); border-radius:99px; overflow:hidden}
+.progress i{display:block; height:100%; background:var(--kite); transition:width .3s}
+.count{font-family:var(--mono); font-size:.8rem; color:var(--muted); font-variant-numeric:tabular-nums}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:20px; display:flex; flex-direction:column; gap:12px}
+.quote{font-family:var(--display); font-weight:500; font-size:1.35rem; line-height:1.3; text-wrap:balance}
+.quote::before{content:"“"} .quote::after{content:"”"}
+.quote.plain::before,.quote.plain::after{content:none}
+.opts{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.opts.one{grid-template-columns:1fr}
+.opt{border:1.5px solid var(--line); background:var(--surface); border-radius:12px; padding:12px; text-align:left; min-height:52px; line-height:1.3}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{border-color:var(--good); background:var(--good-soft)}
+.opt.wrong{border-color:var(--bad); background:var(--bad-soft)}
+.opt:disabled{cursor:default}
+.fb{border-radius:var(--r); padding:16px; display:flex; flex-direction:column; gap:8px}
+.fb.ok{background:var(--good-soft)} .fb.no{background:var(--bad-soft)}
+.fb .v{font-family:var(--display); font-weight:700; font-size:1.1rem}
+.fb.ok .v{color:var(--good)} .fb.no .v{color:var(--bad)}
+.fb .tip{border-top:1px solid color-mix(in srgb, var(--ink) 15%, transparent); padding-top:8px}
+.ph{display:inline-block; font-family:var(--mono); font-size:.7rem; padding:3px 8px; border-radius:99px; background:var(--accent-soft); color:var(--accent); white-space:nowrap}
+.ph.nlc{background:var(--sunk); color:var(--ink)}
+.ph.cmc{background:var(--kite-soft); color:var(--kite)}
+.legend{display:flex; gap:6px; flex-wrap:wrap; align-items:center; font-size:.8rem; color:var(--muted)}
+.fb .tip b{font-family:var(--mono); font-size:.72rem; letter-spacing:.06em; text-transform:uppercase}
+.primary{border:0; background:var(--accent); color:var(--accent-ink); font-weight:700; padding:14px; border-radius:12px; font-size:1rem; width:100%}
+.ghost{border:1px solid var(--line); background:var(--surface); padding:10px 14px; border-radius:10px}
+.spacer{flex:1}
+
+/* Order exercise */
+.seq{display:flex; flex-direction:column; gap:6px; min-height:60px; padding:8px; border:1.5px dashed var(--line); border-radius:12px}
+.seq .empty{color:var(--muted); font-size:.9rem; padding:8px}
+.step{display:flex; gap:10px; align-items:flex-start; border:1px solid var(--line); background:var(--surface); border-radius:10px; padding:10px 12px; text-align:left; width:100%; line-height:1.3}
+.step .no{font-family:var(--mono); font-size:.8rem; color:var(--accent); min-width:1.4em; padding-top:2px}
+.step.right{border-color:var(--good); background:var(--good-soft)}
+.step.wrong{border-color:var(--bad); background:var(--bad-soft)}
+.pool{display:flex; flex-direction:column; gap:6px}
+
+/* Naslag */
+details.ref{background:var(--surface); border:1px solid var(--line); border-radius:12px}
+details.ref summary{padding:14px 16px; cursor:pointer; font-family:var(--display); font-weight:700; font-size:1.05rem; list-style:none; display:flex; justify-content:space-between; gap:8px}
+details.ref summary::after{content:"+"; font-family:var(--mono); color:var(--muted)}
+details.ref[open] summary::after{content:"–"}
+details.ref .body{padding:0 16px 16px; display:flex; flex-direction:column; gap:10px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:.88rem}
+th,td{text-align:left; vertical-align:top; padding:8px 6px; border-top:1px solid var(--line)}
+th{font-family:var(--mono); font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:500; border-top:0}
+ol.plain,ul.plain{margin:0; padding-left:1.3em; display:flex; flex-direction:column; gap:4px}
+
+/* Progress view */
+.stat{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+.stat div{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px}
+.stat b{display:block; font-family:var(--display); font-size:1.6rem; font-variant-numeric:tabular-nums}
+.stat span{font-size:.8rem; color:var(--muted)}
+.boxes{display:flex; gap:3px; grid-column:1 / -1}
+.boxes i{flex:1; height:6px; border-radius:2px; background:var(--sunk)}
+.done{text-align:center; align-items:center; padding-top:40px}
+.done .big{font-family:var(--display); font-size:3rem; font-weight:700; font-variant-numeric:tabular-nums}
+@media (max-width:380px){.opts{grid-template-columns:1fr}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap" id="app"></div>
+<nav class="tabs" aria-label="Hoofdmenu"><div class="in" id="tabs"></div></nav>
+<div class="session" id="session" hidden></div>
+
+<script>
+/* ============ INHOUD (uit coach-reader en Master-reader; “aanvulling” = online bron) ============ */
+const MM = {
+  gl:{n:'Gedachtelezen', g:'Vervorming', d:'Weten hoe iemand over iets denkt, zonder het proces aan te geven.', q:'“Hoe weet je dat? Waar baseer je dat op?”', e:'Achterhaal de bron van informatie.'},
+  vp:{n:'Verloren performatief', g:'Vervorming', d:'Waardeoordeel waarbij degene die oordeelt is weggelaten.', q:'“Volgens wie…?”', e:'Verzamel bewijs: achterhaal bron, performatief en overtuigingsstrategie.'},
+  og:{n:'Oorzaak – gevolg', g:'Vervorming', d:'De oorzaak wordt ten onrechte buiten de spreker geplaatst (A > B).', q:'“Hoe komt het dat…?” / “Heb je ooit meegemaakt dat…?”', e:'Achterhaal de keuze, vraag een tegenvoorbeeld.'},
+  ce:{n:'Complexe equivalentie', g:'Vervorming', d:'Twee ervaringen worden uitgelegd als synoniem (A = B).', q:'“Hoe betekent het feit dat X, dat Y?” / “Ken je iemand die…?”', e:'Achterhaal de equivalentie, vraag een tegenvoorbeeld.'},
+  vo:{n:'Vooronderstelling', g:'Vervorming', d:'Wat waar moet zijn om de zin te laten kloppen.', q:'“Hoe weet je dat…?” / vraag naar de vooronderstelling', e:'Omschrijf werkwoorden en keuzes; achterhaal interne representaties.'},
+  uw:{n:'Universele waarheid', g:'Generalisatie', d:'Alle, iedere, nooit, iedereen, niemand…', q:'“Nooit?” / “Wat zou er gebeuren als…?”', e:'Achterhaal een tegenvoorbeeld, effecten en resultaat.'},
+  mn:{n:'Modal operator van noodzaak', g:'Generalisatie', d:'Moet, behoort, het is nodig, mag niet…', q:'“Wat zou er gebeuren als je dat niet doet?” / “Want?”', e:'Achterhaal effecten en uitkomst.'},
+  mm:{n:'Modal operator van (on)mogelijkheid', g:'Generalisatie', d:'Kan, kan niet, zal niet, misschien…', q:'“Wat houdt je tegen?” / “Wat zou er gebeuren als je dat wel deed?”', e:'Achterhaal oorzaken.'},
+  no:{n:'Nominalisatie', g:'Weglating', d:'Proceswoord dat een zelfstandig naamwoord is geworden; past niet in een kruiwagen.', q:'“Hoe zou je … willen [werkwoord]?”', e:'Keer om naar een proces; specificeer het werkwoord.'},
+  ow:{n:'Ongespecificeerd werkwoord', g:'Weglating', d:'Het werkwoord zegt niet hoe het precies ging.', q:'“Hoe precies…?”', e:'Specificeer het werkwoord.'},
+  sw:{n:'Simpele weglating', g:'Weglating', d:'Er ontbreekt waarover of over wie het gaat.', q:'“Waarover? Over wie?”', e:'Achterhaal de weglating.'},
+  ri:{n:'Weglaten referentie-index', g:'Weglating', d:'Geen specifiek persoon of ding aangegeven.', q:'“Wie precies…?”', e:'Achterhaal de referentie-index.'},
+  vw:{n:'Vergelijkende weglating', g:'Weglating', d:'Beter, erger, meest… zonder waarmee vergeleken wordt.', q:'“Erger dan wie/wat? Vergeleken met wie?”', e:'Achterhaal de vergelijkende weglating.'}
+};
+
+/* Wat doe je ermee in je coaching (per patroon) */
+const MMC={
+  gl:'De cliënt merkt vaak dat het een interpretatie is, geen feit. Vraag door: “Wat zou het nog meer kunnen betekenen?” Zo ontstaan andere betekenissen en kan de relatie tot die persoon veranderen (kompas: relatie veranderen).',
+  vp:'Komt de bron boven (“dat zei mijn vader altijd”), dan wordt een vanzelfsprekende waarheid de regel van iemand anders. Vraag: “Is dat nu nog jouw eigen regel? Wat vind jij zelf?” Vaak is het een Ouder-boodschap (TA); vanuit de Volwassene kiest de cliënt wat hij houdt. Ook een mooie ingang voor Byron Katie: “Is het waar?”',
+  og:'Zodra de koppeling zichtbaar is, ontstaat keuze: de cliënt is niet langer alleen het gevolg. Vraag naar een tegenvoorbeeld en dan: “Wat deed je toen anders?” Dat is een uitzondering en een hulpbron voor de hulpbronstaat (fase 4).',
+  ce:'Een tegenvoorbeeld maakt het gelijkteken los. Raakt het identiteit (“dan ben ik een mislukking”), dan is dit je ingang om identiteit te verruimen: “Wie ben je nog meer dan iemand zonder werk?”',
+  vo:'De verborgen aanname wordt bespreekbaar. Daar zit vaak de eigenlijke vraag: check of het contract nog klopt en of je met het goede onderwerp werkt.',
+  uw:'Eén uitzondering breekt de generalisatie. Ga de uitzondering in: wanneer was het, wat deed je, wie was je toen? Dat levert hulpbronnen op.',
+  mn:'Je hoort de regel en wat de cliënt vreest als hij die loslaat. Vaak zit er een driver achter (Wees perfect, Doe je best). Onderzoek wat de regel oplevert en kost, zodat “moeten” “kiezen” kan worden.',
+  mm:'De belemmering wordt concreet, en wat concreet is kun je aanpakken. Vervolgvraag: “Wat heb je nodig om dat wel te kunnen?” Zo kom je bij middelen (sleutel 9) en hulpbronnen.',
+  no:'Een ding ligt vast, een proces kun je beïnvloeden. Vraag wat de cliënt zelf anders zou willen doen in dat proces. Zo kom je bij de gewenste situatie.',
+  ow:'De concrete handeling geeft een specifieke ervaring om mee te werken in de probleemstaat. Vaak blijkt die milder of anders dan het label deed vermoeden.',
+  sw:'Je weet nu waar het eigenlijk over gaat, zodat je niet op het verkeerde onderwerp coacht. Een goed moment voor het contract: “Waar wil je vandaag mee werken?”',
+  ri:'“Zij” wordt één persoon en één situatie. Het probleem krimpt tot iets werkbaars, en je weet met wie de relatie mag veranderen.',
+  vw:'De maatstaf komt boven; vaak is die onhaalbaar of van iemand anders. Vraag: “Met wie of wat wil jij jezelf eigenlijk vergelijken?”'
+};
+for(const k in MMC) MM[k].c=MMC[k];
+const mmItems = [
+  {t:'Jij wordt ook gek van mij!', a:'gl', q:'Hoe weet je dat? Waar baseer je dat op?'},
+  {t:'Mijn baas ziet me niet staan.', a:'gl', q:'Hoe weet je dat hij je niet ziet staan?'},
+  {t:'Je weet toch dat ik het druk heb.', a:'gl', q:'Hoe weet je dat ik dat weet?'},
+  {t:'Het is niet goed om te laat te komen.', a:'vp', q:'Volgens wie is het niet goed om te laat te komen?'},
+  {t:'Mensen leren moeilijk.', a:'vp', q:'Volgens wie leren mensen moeilijk?'},
+  {t:'Als ik geen lijstjes maak, dan wordt het een chaos.', a:'og', q:'Heb je ooit meegemaakt dat het goed ging terwijl je geen lijstje had gemaakt?'},
+  {t:'Mijn man raakt er ook gestrest van.', a:'og', q:'Hoe komt het dat hij daar gestrest van raakt?'},
+  {t:'Ik heb geen werk, dus ik ben een mislukking.', a:'ce', q:'Hoe betekent het feit dat je geen werk hebt, dat je een mislukking bent?'},
+  {t:'Als hij niet naar me kijkt, houdt hij niet van me.', a:'ce', q:'Ken je iemand die van je houdt en soms niet naar je kijkt?'},
+  {t:'Als mijn baas wist hoe hard ik werk, zou hij dit niet doen.', a:'vo', q:'Hoe weet je dat je baas dat niet weet?'},
+  {t:'Ik doe nooit iets goed.', a:'uw', q:'Nooit? Wat zou er gebeuren als je wel iets goed zou doen?'},
+  {t:'Niemand neemt hier een beslissing.', a:'uw', q:'Niemand? Is er ooit iemand geweest die wel een beslissing nam?'},
+  {t:'Ik moet met lijstjes gaan werken en rust nemen.', a:'mn', q:'Wat zou er gebeuren als je dat niet doet?'},
+  {t:'Ik mag je niet vertellen waar het op staat.', a:'mn', q:'Wat zou er gebeuren als je het wel vertelt?'},
+  {t:'Ik kan niet zomaar bewegen wanneer ik dat wil.', a:'mm', q:'Wat houdt je tegen?'},
+  {t:'Ik zal me nooit kunnen ontwikkelen.', a:'mm', q:'Wat zou er gebeuren als je dat wel kon?'},
+  {t:'De communicatie met mijn ouders loopt niet.', a:'no', q:'Hoe zou je met je ouders willen communiceren?'},
+  {t:'Er is een probleem met de samenwerking.', a:'no', q:'Hoe zou je met elkaar willen samenwerken?'},
+  {t:'Zij heeft mij afgewezen.', a:'ow', q:'Hoe heeft ze je precies afgewezen?'},
+  {t:'Ik voel mij niet op mijn gemak.', a:'sw', q:'Waarover? Bij wie?'},
+  {t:'Zij luisteren niet naar mij.', a:'ri', q:'Wie luisteren er niet naar jou?'},
+  {t:'Hij is nog erger.', a:'vw', q:'Erger dan wie? Vergeleken met wie?'}
+];
+const PRESUP = {
+  be:{n:'Bestaan', d:'Zelfstandige naamwoorden en persoonlijke voornaamwoorden: waarover we praten, bestaat.'},
+  mo:{n:'Mogelijkheid / noodzakelijkheid', d:'Woorden als moet, wil, kan.'},
+  og:{n:'Oorzaak / gevolg', d:'Koppelwoorden waarbij het ene deel het gevolg is van het andere (A → B).'},
+  ce:{n:'Complexe equivalentie', d:'Zinsdelen gelijkgesteld als gelijkwaardig (A = B), vaak met “is/bent”.'},
+  bw:{n:'Bewustzijn', d:'Woorden voor waarnemen: zien, horen, voelen, denken, realiseren, bewust zijn van.'},
+  ti:{n:'Tijd', d:'Tijdskader in werkwoorden: verleden, heden, toekomst.'},
+  bv:{n:'Bijwoord / bijvoeglijk naamwoord', d:'Zegt iets over een werkwoord of zelfstandig naamwoord.'},
+  of:{n:'Of', d:'Een keuze, waarbij het onderliggende al vaststaat.'},
+  or:{n:'Ordinaal', d:'Een rangorde: eerste, tweede, negende.'}
+};
+const presupItems = [
+  {t:'Als we praten over de oplossing, dan bestaat die ook.', a:'be'},
+  {t:'Moet je veranderen of wil je veranderen?', a:'mo'},
+  {t:'Omdat je me helpt, zal het me lukken.', a:'og'},
+  {t:'Als je maar vaak genoeg over een zandpaadje gaat, wordt het vanzelf een brede weg.', a:'og'},
+  {t:'Jij bent een lerend wezen.', a:'ce'},
+  {t:'Dit onderwerp is makkelijk.', a:'ce'},
+  {t:'Wat zien de mensen aan jou, hoe zien ze dat je veranderd bent?', a:'bw'},
+  {t:'Zij is zich bewust van haar keuze.', a:'bw'},
+  {t:'Heb je een probleem of had je een probleem?', a:'ti'},
+  {t:'Zul je een oplossing hebben.', a:'ti'},
+  {t:'Welke functionele oplossing ga jij vinden?', a:'bv'},
+  {t:'Veel oplossingen hebben al heel snel een effect.', a:'bv'},
+  {t:'Wil je nu in een prettige stemming komen of straks als je weggaat?', a:'of'},
+  {t:'Dit is dus de eerste keer dat het je lukt!', a:'or'}
+];
+const MILTON = {
+  gl:{n:'Gedachtelezen'}, vo:{n:'Vooronderstelling'}, ce:{n:'Complexe equivalentie'}, og:{n:'Oorzaak en gevolg'},
+  uq:{n:'Universele quantifier'}, mo:{n:'Modale operator'}, no:{n:'Nominalisatie'}, ow:{n:'Ongespecificeerd werkwoord'},
+  vw:{n:'Vergelijkende weglating'}, ri:{n:'Geen referentie-index'}, ci:{n:'Citeren'}, gh:{n:'Gesprekshypothese'}
+};
+const miltonItems = [
+  {t:'Ik weet dat sommige mensen zich nog afvragen wat trance eigenlijk is.', a:'gl', w:'Een algemene uitspraak over wat de ander zou kunnen denken. Niet te specifiek, dan zit je er niet naast.'},
+  {t:'Wil je nu in trance gaan of stel je het liever nog even uit?', a:'vo', w:'Dat je in trance gaat staat vast; de enige keuze gaat over het tijdstip.'},
+  {t:'Ik vraag me af of je je wel realiseert hoe ontspannen je bent.', a:'vo', w:'Vooronderstelt: je bent ontspannen.'},
+  {t:'Hier zijn betekent leren.', a:'ce', w:'Twee zaken gelijkgesteld; “betekent” kun je vervangen door “is”.'},
+  {t:'Als je ontspannen bent, zal het proces nog beter gaan.', a:'og', w:'Koppelwoorden als en, als, wanneer, terwijl werken als milde oorzaak en gevolg.'},
+  {t:'Van elke situatie valt iets te leren.', a:'uq', w:'Universeel hoeveelheidswoord: elke.'},
+  {t:'Je kunt ervaren dat je, steeds als je naar het licht kijkt, dieper in trance raakt.', a:'mo', w:'“Je kunt” geeft toestemming zonder te forceren.'},
+  {t:'Persoonlijke groei en ontwikkeling levert nieuw inzicht en begrip op.', a:'no', w:'Groei, ontwikkeling, inzicht, begrip: de luisteraar geeft er zelf betekenis aan.'},
+  {t:'Iedereen kan leren en je weet wel hoe dat gaat; ineens heb je het gevoel dat je het weet.', a:'ow', w:'Hoe dat precies gaat, wordt weggelaten; ieder vult het zelf in.'},
+  {t:'Als je meer van het geleerde gaat toepassen, zul je nog succesvoller zijn.', a:'vw', w:'Succesvoller dan wie of wat? Dat blijft open.'},
+  {t:'Het is bekend dat mensen in staat zijn boeken te lezen en veranderingen door te maken.', a:'ri', w:'Welke mensen, boeken en veranderingen? Niet gespecificeerd.'},
+  {t:'Laatst vertelde een trainer dat een schrijver ons leert om te stoppen met oordelen.', a:'ci', w:'De boodschap komt via een ander in het verhaal, niet van jou.'},
+  {t:'Staat de deur nog open?', a:'gh', w:'Een ja/nee-vraag die een andere gedragsrespons oproept: doe de deur dicht.'}
+];
+const mmVsMilton = [
+  {t:'Wie precies luistert er niet naar je?', a:0, w:'Specificeert een weglating (referentie-index). Meta-model: terug naar de dieptestructuur.'},
+  {t:'Je kunt je afvragen wat je onbewuste al weet.', a:1, w:'Vaag en toestemmend; de cliënt vult zelf in. Milton-model.'},
+  {t:'Hoe heeft ze je precies afgewezen?', a:0, w:'Specificeert het werkwoord.'},
+  {t:'En terwijl je luistert naar mijn stem, kun je merken hoe het al anders wordt.', a:1, w:'Koppeling met “terwijl”, modale operator, vooronderstelling: Milton.'},
+  {t:'Volgens wie is het niet goed?', a:0, w:'Haalt de verloren performatief terug.'},
+  {t:'Mensen kunnen leren.', a:1, w:'Context met zo min mogelijk inhoud; de luisteraar zoekt zelf betekenis.'},
+  {t:'Erger dan wat?', a:0, w:'Haalt de vergelijkende weglating terug.'},
+  {t:'Misschien merk je al dat iets in je lichaam ontspant.', a:1, w:'Gedachtelezen in algemene vorm plus vooronderstelling.'}
+];
+const chunkItems = [
+  {t:'Waar is dit een voorbeeld van?', a:0}, {t:'Voor welk doel…?', a:0}, {t:'Met welke bedoeling?', a:0},
+  {t:'Wat zijn daar voorbeelden van?', a:1}, {t:'Wat specifiek…?', a:1}, {t:'Hoe heeft hij dat precies gezegd?', a:1, w:'Elke meta-modelvraag is een downchunk.'},
+  {t:'Wat is nog een ander voorbeeld in dezelfde categorie?', a:2, w:'Lateraal: een ander voorbeeld op hetzelfde niveau, zoals van auto’s naar boten.'},
+  {t:'Wat lijkt hier op, uit een heel ander deel van je leven?', a:2}
+];
+const OGW = {
+  sc:{n:'Schaalvraag'}, es:{n:'Eerdere-successenvraag'}, gs:{n:'Gewenste-situatievraag'}, pl:{n:'Platformvraag'},
+  uz:{n:'Uitzonderingsvraag'}, wo:{n:'Wondervraag'}, pw:{n:'Perspectiefwisselingsvraag'}, co:{n:'Copingvraag'}
+};
+
+const OGWC={
+  sc:'Gebruik het cijfer als vertrekpunt: wat zit er tussen 0 en nu (hulpbronnen), hoe ziet 1 punt hoger eruit, wat is de kleinste stap? Herhaal de schaal in het vervolggesprek om verandering zichtbaar te maken.',
+  es:'Het eerdere succes is een kant-en-klare hulpbron. Laat de cliënt erin associëren (wat deed je, wat zag, hoorde, voelde je?) en gebruik het als hulpbronstaat in fase 4.',
+  gs:'Dit vult het contract en de eindstaat-energie (fase 3). Vraag door tot positieve gedragsbeschrijvingen: wat doe je dan, wat merken anderen?',
+  pl:'Versterkt zelfvertrouwen. Vraag: “Wat heeft daarbij vooral geholpen? Wat deed jij zelf?” De antwoorden zijn bouwstenen voor de volgende stap.',
+  uz:'In de uitzondering zit de oplossing al. Onderzoek wat er anders was en wat de cliënt toen deed. Als iets werkt, doe er meer van.',
+  wo:'Associeer de cliënt in het wonder: “Wat is er nog meer veranderd? Hoe voelt dat?” Zo krijg je de eindstaat en vaak al een idee voor de eerste stap. Zegt de cliënt “dat kan niet”: “Doe alsof.”',
+  pw:'Maakt de gewenste situatie concreet en waarneembaar en betrekt de omgeving. Geschikt om de bewijsprocedure (sleutel 5) en de future pace te vullen.',
+  co:'Erkent de moeite en haalt verborgen kracht naar boven. Gebruik hem als iemand op 0 staat. Daarna kun je voorzichtig naar de platformvraag of een kleine stap.'
+};
+for(const k in OGWC) OGW[k].c=OGWC[k];
+const ogwItems = [
+  {t:'Op een schaal van 0 tot 10, waar sta je nu?', a:'sc'},
+  {t:'Wat maakt dat je op 6 zit en niet op 3?', a:'sc', w:'Een variatie van de schaalvraag uit de reader.'},
+  {t:'Wanneer heb je al eens een situatie meegemaakt die al een beetje leek op hoe je wilt dat het wordt?', a:'es'},
+  {t:'Wanneer heb je een dergelijk probleem al eens weten op te lossen?', a:'es'},
+  {t:'Wat wil je in plaats van het probleem?', a:'gs'},
+  {t:'Waaraan zou jij merken dat het straks beter gaat?', a:'gs'},
+  {t:'Wat gaat er al een beetje goed?', a:'pl'},
+  {t:'Hoe is het je al gelukt om van 0 te komen tot waar je nu staat op de schaal?', a:'pl', w:'De platformvraag, gesteld via de schaal.'},
+  {t:'Wanneer had je hier iets minder last van?', a:'uz'},
+  {t:'Wat deed jij anders toen het probleem minder erg was?', a:'uz'},
+  {t:'Als je morgen wakker wordt, wat zullen dan de eerste dingen zijn waaraan je merkt dat het wonder heeft plaatsgevonden?', a:'wo'},
+  {t:'Waaraan zouden je collega’s merken dat het conflict is opgelost?', a:'pw', w:'De Shazer en Berg noemden dit de relatievraag.'},
+  {t:'Wie zal het eerst merken dat je veranderd bent?', a:'pw'},
+  {t:'Hoe houd je het vol?', a:'co'},
+  {t:'Wat maakt dat je door kunt gaan onder zulke moeilijke omstandigheden?', a:'co'},
+  {t:'Hoe heb je voorkomen dat het erger werd?', a:'co', src:'aanvulling', w:'Copingvraag uit de oplossingsgerichte literatuur (Solution Focused Center).'}
+];
+const PHASES = ['Contract maken','1 · Associeer in probleemstaat','2 · Dissocieer van probleemstaat','3 · Eindstaat-energie','4 · Associeer in hulpbronstaat','5 · Hulpbronstaat in probleemstaat','6 · Future pace'];
+const phaseItems = [
+  {t:'Wat zou je graag voor jezelf willen vandaag?', a:0, w:'Een beginvraag uit de reader: hiermee maak je het contract.'},
+  {t:'Waar heb je last van en zou je willen switchen?', a:0},
+  {t:'Hoe weet je dat je dit probleem hebt? Wat merk je in je lichaam?', a:1, w:'De cliënt voelt de probleemconstructie; zo kan hij straks de verandering opmerken.'},
+  {t:'Hoe is het een probleem voor je, nu?', a:1},
+  {t:'Stap er eens uit en kijk ernaar van een afstand. Wat zie je?', a:2, w:'Dissociëren maakt brein en lichaam vrij voor nieuwe paden.'},
+  {t:'Hoe zou je zijn als persoon als dit probleem er niet meer is?', a:3, w:'Richting identiteitsniveau, met de vlieger: brein én lichaam.'},
+  {t:'Denk aan een moment waarop je je volledig in je kracht voelde. Ga daar helemaal in staan.', a:4, w:'Hulpbronstaat: identiteit verruimen met jouw interventies.'},
+  {t:'Neem die nieuwe mogelijkheden mee naar de situatie waar je mee zat. Wat merk je nu?', a:5, w:'Check het contract: wat is er veranderd?'},
+  {t:'Stel je voor: het is volgende maand en die situatie doet zich weer voor. Hoe ga je ermee om?', a:6, w:'Optioneel, na stap 5.'}
+];
+const BRAIN = ['Denkbrein links','Denkbrein rechts','Voelbrein','Prefrontale cortex (observator)'];
+const brainItems = [
+  {t:'Hoe zal het zijn als je dit probleem niet meer hebt?', a:0, w:'Oplossingsgericht en talig: denkbrein links.'},
+  {t:'Wat is het tegenovergestelde van dit probleem?', a:0},
+  {t:'Wat zou je moeten doen om 1 stapje op te schuiven op de schaal?', a:0},
+  {t:'Hoe ziet de oplossing eruit?', a:1, w:'Beelden en metaforen: denkbrein rechts.'},
+  {t:'Welk voorwerp symboliseert het voor jou als je probleem is opgelost?', a:1},
+  {t:'Wat kun je doen in dit beeld om het prettiger te maken?', a:1},
+  {t:'Waar in je lichaam voel je dat het meest?', a:2, w:'Sensaties: voelbrein.'},
+  {t:'Zit het diep of aan de oppervlakte, is het warm of koud?', a:2},
+  {t:'Hoe zou je dit gevoel makkelijk kunnen uitbreiden?', a:2},
+  {t:'Heb je gemerkt dat je ademhaling rustiger werd?', a:3, w:'Benoem een positieve verandering in het proces: de observator.'},
+  {t:'Welke ontdekkingen heb je gedaan?', a:3},
+  {t:'Wat heb je geleerd en wat ga je nu anders doen?', a:3}
+];
+const EGO = ['Kritische Ouder (KO)','Voedende Ouder (VO)','Volwassene (V)','Aangepast Kind (AK)','Vrij Kind (VK)'];
+const egoItems = [
+  {t:'Je moet altijd je bord leegeten.', a:0, w:'Een Ouder-boodschap: “Ik of jij moet…”. Basis: normen.'},
+  {t:'Dat is dom.', a:0, w:'Kritische Ouder, hard en negatief: oordelend en kleinerend.'},
+  {t:'Je bent wel lief als je je kamer opruimt.', a:0, w:'Kritische Ouder, subtiel verpakt: gedrag wordt gestuurd door de boodschap.'},
+  {t:'Kom maar hier, het komt wel goed.', a:1, w:'Troost en bescherming: Voedende Ouder, positief.'},
+  {t:'Arme jij, laat mij dat maar voor je regelen.', a:1, w:'Voedende Ouder, negatief: betuttelend, klein houden.'},
+  {t:'Ik denk dat we eerst de feiten op een rij zetten.', a:2, w:'Kernwoorden “Ik denk…”: rationeel, in het hier-en-nu.'},
+  {t:'Ik ben me bewust dat ik nu moe ben en dat dit meespeelt.', a:2, w:'“Ben me bewust…”: Volwassene, die gegevens uit Ouder en Kind integreert.'},
+  {t:'Sorry, sorry, ik zal het nooit meer doen.', a:3, w:'Gehoorzaam en schuldig: Aangepast Kind.'},
+  {t:'Ik doe het lekker niet, die regels zijn stom.', a:3, w:'Rebellie is ook aanpassing: een reactie op regels, dus Aangepast Kind.'},
+  {t:'Joepie, laten we het gewoon uitproberen!', a:4, w:'Spontaan en nieuwsgierig: Vrij Kind.'},
+  {t:'Ik wil dit, ik voel het gewoon.', a:4, w:'“Ik voel… ik wil…”: Kind-kernwoorden, eigen behoeften.'},
+  {t:'Zo hoort het niet, dat weet je toch.', a:0}
+];
+const DRIVERS = ['Wees perfect','Wees sterk','Doe je best','Doe anderen plezier','Schiet op'];
+const ALLOW = ['Het is oké om jezelf te zijn.','Het is oké om open te zijn en voor je eigen behoeften te zorgen.','Het is oké om het gewoon te doen.','Het is oké om rekening te houden met jezelf.','Het is oké om je tijd te nemen.'];
+const driverItems = [
+  {t:'Ik lever het pas in als het helemaal foutloos is.', a:0},
+  {t:'Natuurlijk, dat spreekt voor zich. En ten tweede…', a:0, src:'aanvulling', w:'Woorden als “natuurlijk”, opsommen op de vingers (Hay).'},
+  {t:'Het viel me op dat het zwaar was, maar men redt zich wel.', a:1, src:'aanvulling', w:'“Het viel me op” in plaats van “ik dacht”, “men” in plaats van “ik” (Hay).'},
+  {t:'Ik heb niemand nodig, ik los het zelf op.', a:1},
+  {t:'Ik ga het proberen, maar het is echt heel moeilijk.', a:2},
+  {t:'Wat bedoel je, en waarom, en hoe zie jij dat dan, en…?', a:2, src:'aanvulling', w:'Vragen aan elkaar rijgen zodat de ander moet “proberen” te antwoorden (Hay).'},
+  {t:'Wat vind jij ervan? Ik vind alles goed hoor.', a:3, src:'aanvulling', w:'Een mening alleen als vraag brengen (Hay).'},
+  {t:'Als jij het goed vindt, dan doe ik het zo.', a:3},
+  {t:'Ja ja, laten we door, we hebben geen tijd.', a:4},
+  {t:'Ik moet nog even snel iets doen, en dan nog dit…', a:4}
+];
+const STOPPERS = ['Besta niet','Wees niet jezelf','Wees geen kind','Groei niet op','Kom niet dichtbij','Hoor er niet bij','Wees niet belangrijk','Wees niet gezond','Slaag niet','Denk niet','Doe niet','Voel niet'];
+const stopperItems = [
+  {t:'Je bent niet gewenst.', a:0},{t:'Je bent van het verkeerde geslacht.', a:1},{t:'Groei op en gedraag je verantwoordelijk.', a:2},
+  {t:'Blijf altijd mijn kindje.', a:3},{t:'Niemand is te vertrouwen.', a:4},{t:'Je past gewoon niet bij ons.', a:5},
+  {t:'Je hebt voor mij geen prioriteit.', a:6},{t:'Je krijgt aandacht, wees dan ziek.', a:7},{t:'Je doet ook nooit wat goed.', a:8},
+  {t:'Mijn ouders weten overal raad op.', a:9},{t:'Wat dan ook, doe het niet.', a:10},{t:'Geen emoties graag.', a:11}
+];
+const DRAMA = ['Aanklager','Redder','Slachtoffer'];
+const WIN = ['Assertief en kwetsbaar','Coach en zorgzaam','Eerlijk en verantwoordelijk'];
+const dramaItems = [
+  {t:'Kom maar, laat mij het maar even doen.', a:1, w:'De Redder biedt graag ongevraagd hulp en neemt verantwoordelijkheid van een ander over.'},
+  {t:'Ik wil alleen maar helpen hoor.', a:1},
+  {t:'Jij snapt er echt niets van, hè.', a:0, w:'De Aanklager wijst om zijn eigen zwakte te verbergen.'},
+  {t:'Dit is allemaal jouw schuld.', a:0},
+  {t:'Waarom is dit nog steeds niet af?', a:0},
+  {t:'Waarom overkomt mij dit altijd?', a:2, w:'Het Slachtoffer gedraagt zich hulpeloos en reageert vanuit onmacht.'},
+  {t:'Ik kan het niet, ik weet niet hoe het moet.', a:2}
+];
+const winItems = [
+  {t:'Een collega zegt: “Kom maar, laat mij het maar even doen.” Welke reactie hoort bij de winnaarsdriehoek?', o:['Ik denk met je mee, maar jij voert het uit.','Fijn, dan hoef ik het niet te doen.','Jij denkt altijd dat je het beter weet.'], a:0, w:'Van Redder naar zorgzaam: helpen zonder het over te nemen.', src:'aanvulling'},
+  {t:'Een cliënt zegt: “Dit is allemaal jouw schuld.” Welke reactie is assertief?', o:['Ik zie dat je boos bent. Ik wil kijken wat jouw deel en mijn deel is.','Sorry, je hebt gelijk, ik had het anders moeten doen.','Nee, het is juist jouw schuld.'], a:0, w:'Grens stellen zonder aanval: van Aanklager naar assertief.'},
+  {t:'Je merkt bij jezelf: “Waarom overkomt mij dit altijd?” Wat is de reactie uit de winnaarsdriehoek?', o:['Ik loop vast bij de eerste stap en ik heb uitleg nodig.','Niemand helpt mij ooit.','Laat maar, het lukt toch niet.'], a:0, w:'Van Slachtoffer naar eerlijk en verantwoordelijk: benoem eerlijk wat je nodig hebt en neem je eigen deel.'},
+  {t:'Je cliënt vraagt: “Wat zou jij doen?” Wat doe je vanuit de winnaarsdriehoek?', o:['Wat zou jij willen, als je het zelf mocht kiezen?','Ik zou gewoon ontslag nemen.','Dat moet je zelf maar weten.'], a:0, w:'Coach en zorgzaam: de verantwoordelijkheid blijft bij de cliënt.'}
+];
+const ORDERS = {
+  meta:{t:'Zet de stappen van de meta-structuur op volgorde.', s:['Associeer in probleemstaat','Dissocieer van probleemstaat','Eindstaat-energie: identiteit, vlieger','Veranderproces: associeer in hulpbronstaat','Associeer hulpbronstaat in probleemstaat','Optie: associeer hulpbronstaat in toekomst'], w:'Elk veranderproces kan hierlangs, en je maakt meteen een helder impliciet en expliciet contract.'},
+  sleutels:{t:'Zet de 11 Sleutels voor een haalbare uitkomst op volgorde.', s:['Start','Positief uitgedrukt','Geef huidige situatie aan','Geef het resultaat aan','Geef de bewijsprocedure aan','Is het wenselijk gezien de overige omstandigheden?','Is het op je eigen initiatief ondernomen en gehandhaafd?','Is het in de juiste context geplaatst?','Welke middelen zijn ervoor nodig?','Is het ecologisch verantwoord?','Evaluatie']},
+  stp:{t:'Zet de stappen van het Sensatie Transformatie Proces op volgorde.', s:['Ontdek de probleemstaat: welke sensaties horen erbij?','Identificeer de eindstaat-energie','Creëer een andere relatie met de sensaties van de probleemstaat','Verificatie en verankering: wat gebeurt er nu echt?'], w:'Stap 3 kun je ook los inzetten wanneer een cliënt overspoeld raakt.'},
+  alpha:{t:'Zet de stappen van de Alpha Sequence op volgorde.', s:['Ogen sluiten','Trance-inductie: verander de toonhoogte van je stem','Ontspan de achterkant van de tong','Maak de onderkaak los','Langzaam en geleidelijk ademhalen','Adem dieper in en langer uit, tel tot 6','Verruim het bewustzijn: alle ruimte om je lichaam heen']},
+  mm3:{t:'Zet de 8 vragen van Meta Model III op volgorde.', s:['Wat scheelt eraan?','Wat was de oorzaak van dit probleem?','Hoe ben je er in tekort geschoten dit op te lossen?','Hoe kun je over het probleem bij de oplossing komen?','Wat zou je graag willen veranderen?','Wanneer STOP je ermee dit nog een beperking te laten zijn?','Hoeveel manieren ken je waarop je dit opgelost hebt?','Ik weet dat je aan het veranderen bent en dat je de zaken nu anders ziet.'], w:'Na vraag 4 volgt de flip: van probleem naar oplossing. Elke vraag vooronderstelt een stap verder.'},
+  schaal:{t:'Zet de stappen van de schaalvraag (uitgebreid) op volgorde.', s:['Welk cijfer geef je jezelf, en hoe ben je van 0 naar dit cijfer gekomen?','Wat geeft jou energie en kracht in het hier en nu?','Hoe zou je weten dat je één punt hoger uitkomt?','Wat heb je zelf gedaan om dit te bereiken?','Wanneer was het cijfer hoger, en wat deed je toen?','Wat kun je komende week doen om een halve punt te stijgen?'], w:'In de reader noemt de cliënt bij stap 1 wel 25 dingen. Blijf vragen: wat nog meer?'}
+};
+
+
+/* ============ INZET IN DE META-STRUCTUUR ============ */
+const PH={k:'Contract',1:'1 · Probleemstaat',2:'2 · Dissociëren',3:'3 · Eindstaat-energie',4:'4 · Hulpbronstaat',5:'5 · Hulpbron in probleemstaat',6:'6 · Future pace'};
+const PH_ORDER=['k',1,2,3,4,5,6];
+const MMP={gl:[1],vp:[1,4],og:[1,4],ce:[1,3],vo:['k',1],uw:[1,4],mn:[1],mm:[1,4],no:[1,3],ow:[1],sw:['k'],ri:[1],vw:[1]};
+for(const k in MMP) MM[k].p=MMP[k];
+const OGWP={sc:['k',5],es:[4],gs:['k',3],pl:[4],uz:[4],wo:[3],pw:[6],co:[1,2]};
+for(const k in OGWP) OGW[k].p=OGWP[k];
+const MILTONC={
+  gl:{p:[2,4], c:'Pace de binnenwereld van de cliënt in algemene woorden (“misschien merk je…”). Zo blijft het rapport intact terwijl je de aandacht naar binnen leidt, weg van het verhaal.'},
+  vo:{p:[4,5], c:'Laat de verandering vaststaan en geef alleen keuze over hoe of wanneer: “Merk je het nu al, of pas als je straks aan die situatie denkt?” Sterk in fase 5, als je de hulpbron meeneemt naar het probleem.'},
+  ce:{p:[3,4], c:'Koppel wat er nu gebeurt aan de gewenste identiteit: “Hier zitten betekent dat er al iets in beweging is.” Zo veranker je de hulpbronstaat op identiteitsniveau.'},
+  og:{p:[2,4], c:'Verbind wat er al is met wat je wilt dat er gebeurt: “En terwijl je ademt, kan er ruimte ontstaan.” Dit is de lijm van de Alpha Sequence en helpt het DMN tot rust te brengen.'},
+  uq:{p:[4,6], c:'Maak een hulpbron algemeen geldig: “Elke keer dat je ademhaalt, kun je hier weer bij.” Daarmee wordt hij ook in de toekomst beschikbaar (future pace).'},
+  mo:{p:[4,5], c:'“Je kunt…” geeft toestemming zonder druk, dus zonder weerstand. Gebruik het om nieuwe mogelijkheden aan te bieden in de hulpbronstaat.'},
+  no:{p:[3], c:'Woorden als rust, ruimte, vertrouwen laat de cliënt zelf invullen. Ideaal voor eindstaat-energie: de cliënt kiest zijn eigen beeld en gevoel erbij.'},
+  ow:{p:[4], c:'Laat open hoe de verandering precies gaat (“je weet wel hoe dat gaat”), zodat het onbewuste zijn eigen weg vindt in de hulpbronstaat.'},
+  vw:{p:[4,5], c:'Versterk een shift die al zichtbaar is: “Nog lichter… nog meer ruimte.” Zonder maatstaf kan het steeds verder groeien.'},
+  ri:{p:[2,4], c:'Indirecte suggestie via “mensen”: “Mensen ontdekken soms dat…” De cliënt neemt eruit wat bij hem past, zonder dat het een opdracht van jou is.'},
+  ci:{p:[4], c:'Breng een boodschap via een verhaal of metafoor van een ander. Dat spreekt het rechterdenkbrein aan en omzeilt de criticus.'},
+  gh:{p:[5], c:'Een uitnodigende ja/nee-vraag als “Kun je merken wat er nu anders is?” zet de cliënt in de observatorpositie (PFC) en checkt de verandering.'}
+};
+for(const k in MILTONC){MILTON[k].p=MILTONC[k].p; MILTON[k].c=MILTONC[k].c}
+const MVMC=[{p:['k',1], c:'Meta-model gebruik je vooral bij het contract en in fase 1: van oppervlaktestructuur naar dieptestructuur, zodat duidelijk wordt waar de cliënt echt mee zit.'},
+            {p:[2,3,4], c:'Milton-taal gebruik je vooral in fase 2 tot 4: dissociëren, eindstaat-energie en hulpbronstaat. Vaag laten geeft het onbewuste ruimte om zelf te zoeken.'}];
+const CHUNKC=[{p:[3], c:'Upchunken brengt je naar het doel achter het doel, waarden en identiteit: precies de eindstaat-energie.'},
+              {p:['k',1], c:'Downchunken maakt het contract en de probleemstaat concreet en zintuiglijk; elke meta-modelvraag is een downchunk.'},
+              {p:[4], c:'Lateraal chunken vindt hulpbronnen en metaforen uit een andere context, voor de hulpbronstaat.'}];
+const EGOC=[
+  {p:[1,4], c:'Hoor je de Kritische Ouder (vaak als innerlijke criticus), vraag: “Wiens stem is dat?” en nodig de cliënt uit naar de Volwassene. In de hulpbronstaat kan de positieve kant (grenzen stellen) juist een hulpbron zijn.'},
+  {p:[4], c:'Positieve Voedende Ouder richting jezelf is een hulpbron: zelfzorg, geruststelling. Let bij de negatieve kant op betutteling, ook bij jezelf als coach.'},
+  {p:['k',5], c:'Met de Volwassene maak je het contract en evalueer je: “Wat merk je nu, wat heb je geleerd?” Dat is ook de observator (PFC) uit het vliegermodel.'},
+  {p:[1,3], c:'Aanpassing en rebellie verraden de probleemstaat. Vraag naar de eigen behoefte (“Wat wil jij?”), dan beweeg je richting identiteit en eindstaat.'},
+  {p:[3,4], c:'Het Vrij Kind is een energiebron: nieuwsgierigheid en spontaniteit. Gebruik het voor eindstaat-energie en een speelse hulpbronstaat.'}
+];
+const DRIVERC=[
+  {p:['k',4], c:'Maak in het contract een doel dat goed genoeg is, en bied in de hulpbronstaat de allower aan: “Het is oké om jezelf te zijn.”'},
+  {p:[1,4], c:'Wees sterk verbergt de probleemstaat; vraag naar sensaties in het lichaam (voelbrein) en bied “Het is oké om open te zijn” aan.'},
+  {p:['k',5], c:'Doe je best blijft proberen zonder af te ronden. Houd de stappen klein en concreet en check in fase 5 of het nu gewoon kan.'},
+  {p:['k',3], c:'Check bij Doe anderen plezier of het contract van de cliënt zelf is (“Wat wil jíj?”), niet van jou of de omgeving.'},
+  {p:[2,4], c:'Schiet op is gebaat bij vertragen: de Alpha Sequence en pauzes in je eigen tempo, en de allower “Het is oké om je tijd te nemen.”'}
+];
+const STOPC={p:[1,3,4], c:'Stoppers zijn besluiten op identiteitsniveau onder de probleemstaat. In de eindstaat en hulpbronstaat werk je met de toestemming die ertegenover staat, bijvoorbeeld “Je mag belangrijk zijn.” Stoppers raken vaak vroege ervaringen: blijf binnen je contract en verwijs door als het buiten coaching valt.'};
+const DRAMAC=[
+  {p:['k',1], c:'Een Aanklager-cliënt wijst naar buiten. Vraag naar zijn eigen deel en behoefte, en maak het contract over wat hij zelf kan beïnvloeden.'},
+  {p:['k'], c:'Hoor je jezelf als coach de Redder worden, ga terug naar het relatiecontract: de cliënt blijft verantwoordelijk, jij bent coach en zorgzaam.'},
+  {p:['k',1], c:'Bij een Slachtoffer-cliënt maak je het contract met “Wat wil je wel?” Bij weinig energie helpt eerst de copingvraag.'}
+];
+const ALLOWC={p:[4,5], c:'Bied de allower aan in de hulpbronstaat, als nieuwe zin over wie je bent. Neem hem in fase 5 mee naar de probleemsituatie: wat verandert er?'};
+const WINC={p:['k'], c:'Het relatiecontract: hoe werken coach en cliënt samen? Vanuit de winnaarsdriehoek blijft de verantwoordelijkheid bij de cliënt.'};
+
+const PRESUPC={
+  be:{p:[3], c:'Praat over de oplossing alsof die er is; dan bestaat hij in het hoofd van de cliënt. Zo bouw je de eindstaat op.'},
+  mo:{p:['k'], c:'Luister in het contract of de cliënt “moet” of “wil”. Alleen een eigen “wil” geeft energie voor verandering.'},
+  og:{p:[4,5], c:'Koppel de verandering aan iets wat zeker gebeurt: “Omdat je hier zit, kun je…” Zo neem je de hulpbron mee naar de probleemsituatie.'},
+  ce:{p:[3], c:'Een gelijkstelling over wie de cliënt is (“Jij bent een lerend wezen”) verruimt de identiteit in de eindstaat.'},
+  bw:{p:[5,6], c:'“Wat zien mensen aan jou, hoe zien ze dat je veranderd bent?” vooronderstelt de verandering. Sterk bij het testen en de future pace.'},
+  ti:{p:[1,5], c:'Zet het probleem in de verleden tijd (“het probleem dat je had”) en de hulpbron in heden en toekomst. Zo schuift de beleving mee, zoals bij MM3 en tijd.'},
+  bv:{p:[4], c:'“Hoe snel merk je…?” Het bijwoord stuurt de aandacht naar het hoe, terwijl het feit dat het gebeurt al vaststaat.'},
+  of:{p:[5], c:'Een keuze waarbij de verandering vaststaat: “Merk je het nu of straks?” Een milde dubbele binding.'},
+  or:{p:[5,6], c:'“De eerste keer dat het je lukt” vooronderstelt dat er meer keren volgen. Mooi om af te sluiten en vooruit te kijken.'}
+};
+
+/* ============ UITBREIDING: INTAKE, OVERTUIGINGSTAAL, TA, BEVRIJDENDE TAAL ============ */
+const CM={h:'Huidige situatie', g:'Gewenste situatie', r:'Hulpbronnen', b:'Belemmeringen'};
+const CM_ORDER=['h','g','r','b'];
+/* coachmodel-koppeling voor bestaande onderdelen */
+const MMCM={gl:['b'],vp:['b'],og:['b'],ce:['b'],vo:['h'],uw:['b'],mn:['b'],mm:['b'],no:['h','g'],ow:['h'],sw:['h'],ri:['h'],vw:['b']};
+for(const k in MMCM) MM[k].cm=MMCM[k];
+const OGWCM={sc:['h','g'],es:['r'],gs:['g'],pl:['r'],uz:['r'],wo:['g'],pw:['g'],co:['r']};
+for(const k in OGWCM) OGW[k].cm=OGWCM[k];
+DRIVERC.forEach(x=>x.cm=['b']); STOPC.cm=['b']; ALLOWC.cm=['r'];
+
+/* --- Intake --- */
+const cmItems=[
+  {t:'Wat speelt er op dit moment, en in welke context speelt je vraag?', a:0},
+  {t:'Hoe weet je dat je dit probleem hebt?', a:0},
+  {t:'Wat wil en kan je wel bereiken?', a:1},
+  {t:'Hoe zal je leven eruitzien als het probleem is opgelost?', a:1},
+  {t:'Wat is daarvoor nodig om dat te realiseren?', a:2},
+  {t:'Wie kan je steunen in het behalen van je doel?', a:2},
+  {t:'Hoe heb je kunnen overleven, wat stabiliseert je?', a:2},
+  {t:'Wat zijn mogelijke beperkingen, intern en extern, om je doel te bereiken?', a:3},
+  {t:'Stel dat het probleem er niet meer is: wat ga je dan missen?', a:3, w:'De tweede winst: het voordeel van het probleem kan de verandering tegenhouden.'}
+];
+const CMC=[
+  {p:['k',1], cm:['h'], c:'De huidige situatie geeft de probleemstaat. Laat de cliënt er even in associëren, zodat hij straks de verandering kan opmerken.'},
+  {p:['k',3], cm:['g'], c:'De gewenste situatie wordt het contract en voedt de eindstaat-energie. Vraag door tot iets wat je kunt zien, horen en voelen.'},
+  {p:[4], cm:['r'], c:'Hulpbronnen gebruik je in de hulpbronstaat. Hoe concreter, hoe makkelijker de cliënt erin kan associëren.'},
+  {p:['k',1], cm:['b'], c:'Belemmeringen bespreek je bij het contract (wat houdt je tegen, wat is de tweede winst?) en ze laten zien waar de interventie op moet aangrijpen.'}
+];
+const SCORE=['Symptoms – symptomen','Cause – oorzaak','Outcome – gewenste uitkomst','Resources – hulpbronnen','Effect – effect van de uitkomst'];
+const scoreItems=[
+  {t:'Wat zijn de symptomen van je vraag: wat is de huidige situatie?', a:0},
+  {t:'Wat merk je er nu van, in je dagelijkse leven?', a:0},
+  {t:'Wat is mogelijk de oorzaak van deze vraag, wat is de basis ervan?', a:1},
+  {t:'Hoe lang heb je het probleem al?', a:1},
+  {t:'Wat is de gewenste uitkomst, de gewenste situatie?', a:2},
+  {t:'Welke hulpbronnen heb je tot je beschikking?', a:3},
+  {t:'Wat is het effect als je de uitkomst hebt bereikt?', a:4},
+  {t:'Wat verandert er daardoor nog meer in je leven?', a:4}
+];
+const SCOREC=[
+  {p:['k',1], cm:['h'], c:'Symptomen horen bij de probleemstaat: hier associeer je de cliënt in fase 1.'},
+  {p:['k',1], cm:['b'], c:'De oorzaak zit in het verleden. Blijf er kort, het SCORE-model kijkt vooral vooruit naar de uitkomst.'},
+  {p:['k',3], cm:['g'], c:'De uitkomst is je contract en de eindstaat. Toets hem aan de 11 Sleutels.'},
+  {p:[4], cm:['r'], c:'De hulpbronnen staan in het schema onder de tijdlijn: ze dragen de cliënt van heden naar toekomst. Je zet ze in de hulpbronstaat in.'},
+  {p:[3,6], cm:['g'], c:'Het effect maakt de uitkomst aantrekkelijk en ecologisch. Gebruik het bij eindstaat-energie en de future pace.'}
+];
+const ANAM=['Waarom ben je hier (basis)','Associëren in probleem','Dissociëren, associëren in oplossing','Aan de kant van de oorzaak','Motivatie / 2e winst','Gestalt','Hulpbronnen – herkaderen','Systemisch','Hulpbronnen','Start','2e winst – onbewust','Keuze – onbewust'];
+const anamItems=[
+  {t:'Waarom nog meer, waarom nog meer?', a:0},
+  {t:'Hoe is het waar voor je?', a:1},
+  {t:'Wie zal het eerst merken dat je veranderd bent?', a:2},
+  {t:'Vertel over de tijd dat je het niet had.', a:3},
+  {t:'Hoe weet je dat ik je wel kan helpen?', a:4},
+  {t:'Wat gebeurde er de eerste keer dat je het probleem had, welke beslissingen heb je toen genomen?', a:5},
+  {t:'Waar ben je het meest trots op?', a:6},
+  {t:'Wat is de relatie tussen je familie en jou en de huidige situatie?', a:7},
+  {t:'Wie kan je steunen in het oplossen en het behalen van je doel?', a:8},
+  {t:'Wat is de eerste kleine stap, en hoe graag wil je het?', a:9},
+  {t:'Wat is ooit de goede bedoeling of reden geweest van het probleem?', a:10},
+  {t:'Als je het wel zou weten: waarom zou je die keuze gemaakt kunnen hebben?', a:11}
+];
+const ANAMC={p:['k',1], cm:['h','b'], c:'De anamnesevragen zijn een leidraad, geen lijst om af te werken. Kies wat past bij de kennismaking, de intake of het contract van deze sessie.'};
+
+/* --- Overtuigingstaal --- */
+const DB=['Binding / dubbele binding','Dubbele tijdbinding','Bewuste-onbewuste dubbele binding','Meervoudige dubbele binding','Onsamenhangende dubbele binding'];
+const dbItems=[
+  {t:'Ga je hier of daar zitten?', a:0},
+  {t:'Zou je een lichte of een medium trance willen ervaren?', a:0},
+  {t:'Zou je nu of straks willen oefenen?', a:1},
+  {t:'Gaat deze verandering snel of langzaam?', a:1},
+  {t:'Je hoeft niet naar me te luisteren. Je onbewuste kan naar mij luisteren zonder dat je daar weet van hebt.', a:2},
+  {t:'Als je onbewuste wil dat je in trance gaat, zal je rechterhand omhoog gaan. Anders gaat je linkerhand omhoog.', a:2},
+  {t:'Je kan wakker worden, terwijl je merkt dat je lichaam nog slaapt… en je kan wakker zijn terwijl je geest nog slaapt.', a:3},
+  {t:'Neem je liever een bad voordat je naar bed gaat, of doe je je pyjama liever in de badkamer aan?', a:4, w:'Werkt als patroononderbreking; de luisteraar kiest meestal het laatste alternatief.'}
+];
+const DBC=[
+  {p:[4,5], c:'Geef keuze binnen een richting die vaststaat. Fijn voor cliënten met veel onrust die het gevoel van controle nodig hebben.'},
+  {p:[5,6], c:'Laat de verandering vaststaan en geef alleen keuze in tijd: “Merk je het deze week of volgende week?” Sterk bij de future pace.'},
+  {p:[2,4], c:'Benadrukt het onbewuste boven het bewuste. Handig als iemand nog niet vanzelf meegaat met een directe suggestie.'},
+  {p:[2,4], c:'Brengt het bewuste in verwarring, zodat gewoonten en aangeleerde beperkingen even loslaten. Gebruik met rapport en spaarzaam.'},
+  {p:[1,2], c:'Een patroononderbreking: handig als de cliënt vastzit in de probleemstaat en je hem eruit wilt halen.'}
+];
+const SOM=['Metaframe','Pas toe op jezelf (oorzaak/bewijs)','Verander frame','Realiteitsstrategie','Model van de wereld','Bedoeling','Tegenvoorbeeld','Herdefiniëren (oorzaak/gevolg)','Upchunken / overdrijven','Herdefiniëren (waarden)','Chunk down','Metafoor / analogie','Nog een gevolg','Consequenties','Hiërarchie van criteria','Pas toe op jezelf (overtuiging)'];
+const SOM_STMT='Het feit dat je te laat bent betekent dat je niks om me geeft.';
+const somItems=[
+  {t:'Je voelt je alleen maar zo omdat je onrealistische verwachtingen koestert ten aanzien van andere mensen.', a:0},
+  {t:'Dat vertel je me nu! Ik wou dat je genoeg om me had gegeven om me dat eerder te vertellen.', a:1},
+  {t:'Beter te laat dan helemaal niet.', a:2},
+  {t:'Hoe weet je dat ‘te laat komen’ en ‘geven om’ gelijkwaardig zijn?', a:3},
+  {t:'De meeste mensen die ik ken beoordelen ‘geven om iemand’ op respect voor hun gevoelens, niet op tijd.', a:4},
+  {t:'Het was niet mijn bedoeling om te laat te zijn, maar om mijn werk af te maken zodat ik er helemaal voor jou zou zijn.', a:5},
+  {t:'Is het niet mogelijk om te laat te zijn en toch van je te houden?', a:6},
+  {t:'Ik was niet te laat. Ik werd opgehouden.', a:7},
+  {t:'Dus je zegt eigenlijk dat het belangrijkste aspect van onze relatie simpel een kwestie van tijd is?', a:8},
+  {t:'Het is niet dat ik niks om je geef. Het is dat ik houden van op een andere manier laat zien.', a:9},
+  {t:'Laat? Hoe dan precies? Hoe in het bijzonder betekent laat zijn niet om je geven?', a:10},
+  {t:'Als een chirurg te laat is voor het diner omdat hij iemands leven redt, betekent dat dan dat hij niks om het diner geeft?', a:11},
+  {t:'Het punt is niet of ik te laat ben, maar of we elkaars behoeften in deze relatie vervullen.', a:12},
+  {t:'Als ik niet te laat was geweest, had ik misschien mijn klanten verloren, maar ik gaf te veel om je om dat te riskeren.', a:13},
+  {t:'Is het niet belangrijker om mijn verantwoordelijkheden na te komen dan om punctueel te zijn?', a:14},
+  {t:'Een echt liefdevol persoon zou zich wel over een keer te laat zijn heen kunnen zetten.', a:15}
+];
+const SOMC={p:[1,4], cm:['b','r'], c:'In coaching gebruik je Sleight of Mouth niet om een discussie te winnen, maar om een beperkende overtuiging uit fase 1 los te maken. Stel het als vraag (“Is het mogelijk dat…?”) en laat de cliënt het nieuwe kader zelf vinden. Wat dan opkomt, neem je mee naar de hulpbronstaat.'};
+const FRAMES=['Outcome-frame (resultaat)','Ecologie-frame','Evidence-frame (bewijs)','As if-frame (alsof)','Backtrack-frame'];
+const frameItems=[
+  {t:'Wat wil je precies? Is het positief, onder je eigen controle en de juiste grootte?', a:0},
+  {t:'Hoe past dit doel bij je gezin, je vrienden en je werk?', a:1},
+  {t:'Is dit een uiting van wie je als mens bent?', a:1},
+  {t:'Hoe zul je weten dat je je doel bereikt hebt? Wat zie, hoor en voel je dan?', a:2},
+  {t:'Laten we aannemen dat het al gelukt is. Wat doe je dan?', a:3},
+  {t:'Stap een jaar vooruit en kijk terug: welke stappen heb je gezet?', a:3},
+  {t:'Even samenvatten in jouw woorden: je wilt meer rust, en je merkt dat je ’s avonds blijft piekeren.', a:4}
+];
+const FRAMEC=[
+  {p:['k'], cm:['g'], c:'Het outcome-frame toetst het contract aan de vormvoorwaarden, net als de 11 Sleutels.'},
+  {p:['k',5], cm:['b'], c:'Check aan het begin of het doel ecologisch is, en in fase 5 of de verandering past in het hele leven van de cliënt.'},
+  {p:[3,6], cm:['g'], c:'Het bewijs maakt de eindstaat zintuiglijk en geeft je een toets voor de future pace.'},
+  {p:[3,4], cm:['g','r'], c:'Doen alsof omzeilt het “dat kan niet”. Zo bouw je eindstaat-energie en vind je hulpbronnen in de toekomst.'},
+  {p:['k',5], c:'Herhaal in de woorden en toon van de cliënt. Houdt het rapport en het contract helder, vooral als je het spoor even kwijt bent.'}
+];
+const METAF=['Gezegde','Beeldspraak','Anekdote / voorbeeld','Verhalende metafoor'];
+const metafItems=[
+  {t:'Wie niet waagt, wie niet wint.', a:0},
+  {t:'Het voelt als een molensteen om mijn nek.', a:1},
+  {t:'Ik zie het somber in, het is alsof ik overladen word met vuurpijltjes.', a:1, w:'Een probleemgericht beeld van de cliënt: het moment om naar oplossingsgerichte beelden te gaan (denkbrein rechts).'},
+  {t:'Ik had laatst een cliënt die precies hetzelfde dacht, en weet je wat zij ontdekte?', a:2},
+  {t:'Er was eens een boom die dacht dat hij nooit kon buigen…', a:3}
+];
+const METAFC={p:[4], cm:['r'], c:'Een metafoor is een brug tussen bewust en onbewust: niet bedreigend, minder weerstand, en de cliënt vindt zelf de oplossing. Gebruik beelden van de cliënt zelf als ingang naar de hulpbronstaat.'};
+
+/* --- TA --- */
+const STROKE=['Positief voorwaardelijk','Positief onvoorwaardelijk','Negatief voorwaardelijk','Negatief onvoorwaardelijk'];
+const strokeItems=[
+  {t:'Wat heb je dat verslag goed aangepakt.', a:0, w:'Positief, en gebaseerd op wat je doet: voorwaardelijk.'},
+  {t:'Fijn dat je er bent.', a:1, w:'Positief, en gebaseerd op wie je bent: onvoorwaardelijk.'},
+  {t:'Ik vind het leuk om met jou te werken.', a:1},
+  {t:'Dat verslag was slordig.', a:2},
+  {t:'Je kwam weer te laat binnen.', a:2},
+  {t:'Jij bent ook nergens goed voor.', a:3}
+];
+const STROKEC={p:[4,5], cm:['r'], c:'Strokes zijn erkenning. Een onvoorwaardelijke positieve stroke raakt identiteit: geef hem in de hulpbronstaat. Benoem in fase 5 wat de cliënt goed deed (voorwaardelijk), zo versterk je de verandering.'};
+const SPROF=['Geven','Accepteren','Vragen','Afwijzen'];
+const sprofItems=[
+  {t:'Ik zeg zelden tegen collega’s dat ze iets goed hebben gedaan.', a:0},
+  {t:'Als iemand me een compliment geeft, kan ik het echt binnen laten komen.', a:1},
+  {t:'Ik vraag nooit of iemand mijn werk goed vond.', a:2},
+  {t:'Ach, dat stelde niks voor, hoor.', a:3, w:'Een positieve stroke wegwuiven is afwijzen.'},
+  {t:'Ik laat mijn partner vaak weten wat ik in haar waardeer.', a:0},
+  {t:'Kun je me laten weten wat je van mijn voorstel vond?', a:2}
+];
+const SPROFC={p:['k',1], cm:['h','b'], c:'Het strokeprofiel laat zien hoe vaak de cliënt positieve en negatieve strokes geeft, accepteert, vraagt en afwijst. Gebruik het in de intake; de beperkende strokes-overtuigingen zijn belemmeringen om mee te werken.'};
+const dsItems=[
+  {t:'Wees perfect', a:0},{t:'Doe je best', a:0},{t:'Schiet op', a:0},{t:'Wees sterk', a:0},{t:'Doe anderen plezier', a:0},
+  {t:'Voel niet', a:1},{t:'Hoor er niet bij', a:1},{t:'Wees niet belangrijk', a:1},{t:'Denk niet', a:1},{t:'Groei niet op', a:1}
+];
+const DSC=[
+  {p:[1,4], cm:['b'], c:'Drivers zijn voorwaardelijk (“als ik… dan krijg ik aandacht”): ze houden je boven water, zoals de ballonnen in het drenkelingdiagram. Bied in de hulpbronstaat de allower aan.'},
+  {p:[1,3], cm:['b'], c:'Stoppers zijn verboden: de bakstenen die je onder water trekken als de drivers niet meer lukken. Werk in de eindstaat met de toestemming die ertegenover staat.'}
+];
+
+/* --- Bevrijdende taal --- */
+const KATIE=['1 · Is het waar?','2 · Hoe reageer je als je de gedachte gelooft?','3 · Wie zou je zijn zonder deze gedachte?','4 · Draai de gedachte om'];
+const katieItems=[
+  {t:'Kun je absoluut zeker zijn dat het altijd waar is?', a:0},
+  {t:'Wat is de realiteit? Waar heb je die gedachte geleerd?', a:0},
+  {t:'Wat gebeurt er wanneer je in deze gedachte gelooft?', a:1},
+  {t:'Kun je één reden bedenken om deze gedachte te houden die niet deprimerend, pijnlijk of stressvol is?', a:1},
+  {t:'Hoe zou je je gedragen in het contact met die ander, zonder die gedachte?', a:2},
+  {t:'Wat is het tegenovergestelde van deze gedachte?', a:3},
+  {t:'Is deze omkering even waar of meer waar dan het origineel?', a:3}
+];
+const KATIEC=[
+  {p:[1], cm:['b'], c:'De eerste vraag opent de gedachte: de cliënt ontdekt dat het een gedachte is, geen feit. Laat de vraag landen, haast niet.'},
+  {p:[1,2], cm:['b'], c:'Hier voelt de cliënt wat de gedachte kost: de probleemstaat. Door ernaar te kijken ontstaat al afstand.'},
+  {p:[3], cm:['g'], c:'Dit is eindstaat-energie op identiteitsniveau: “Wie ben je zonder?” Laat de cliënt het voelen, in het lichaam.'},
+  {p:[4,5], cm:['r'], c:'De omkeringen geven nieuwe perspectieven, je hulpbronnen. Laat per omkering voorbeelden zoeken en check of het even waar of meer waar is.'}
+];
+const TURN=['Toegepast op jezelf','Toegepast op de ander','Half op jezelf, half op de ander','Het tegenovergestelde: wat je wil, gebeurt al'];
+const turnItems=[
+  {t:'Origineel: “Paul moet mij waarderen.” → “Ik moet mijzelf waarderen.”', a:0, plain:true},
+  {t:'Origineel: “Paul moet mij waarderen.” → “Ik moet Paul waarderen.”', a:1, plain:true},
+  {t:'Origineel: “Paul moet mij waarderen.” → “Paul moet me meer waarderen; Paul zou me niet moeten waarderen.”', a:2, plain:true},
+  {t:'Origineel: “Paul moet mij waarderen.” → “Noem eens drie oprechte voorbeelden van hoe Paul jou waardeert.”', a:3, plain:true},
+  {t:'Origineel: “Hij luistert niet naar mij.” → “Ik luister niet naar mij.”', a:0, plain:true},
+  {t:'Origineel: “Hij luistert niet naar mij.” → “Ik luister niet naar hem.”', a:1, plain:true}
+];
+const TURNC={p:[4,5], cm:['r'], c:'Elke omkering is een andere relatie met dezelfde situatie (kompas: relatie veranderen). Vraag na iedere omkering: is het even waar of meer waar dan het origineel? Wat verandert er in je lichaam?'};
+const INDUC=['Identiteit – Wie','Materie – Wat','Energie – Hoe','Ruimte – Waar','Tijd – Wanneer'];
+const inducItems=[
+  {t:'Wie zou je zijn als je niet jezelf was?', a:0},
+  {t:'Wat zou je niet zijn als je niet jezelf was?', a:1},
+  {t:'Wat zou het zijn om niet jij te zijn?', a:1},
+  {t:'Hoe zou je zijn als je niet jezelf was?', a:2},
+  {t:'Waar zou je zijn als je hier niet was?', a:3},
+  {t:'Wanneer zou je zijn als je nu niet jezelf was?', a:4}
+];
+const INDUCC={p:[3,4], cm:['g','r'], c:'De inductieve vraagwoorden deconstrueren het “ik” en verruimen identiteit. Het dubbele “niet” zet twee polariteiten in een continuüm. Gebruik ze in eindstaat en hulpbronstaat, en sluit af met de Alpha Sequence: “Wie ben je NU? Hoe weet je dat… NU?”'};
+const RHIZ=['Verandering','Onderlinge verbondenheid','Veelvoudigheid','A-significante breuk','Cartografie'];
+const rhizItems=[
+  {t:'Wat heb je bevroren, zonder dat je het merkte?', a:0},
+  {t:'Wat gebeurt er als je er beweging aan toevoegt?', a:0},
+  {t:'Welke positieve aspecten en verbanden liet je buiten beschouwing, die je nu wel kunt meenemen?', a:1},
+  {t:'Welke verschillende gezichtspunten, invalshoeken en afstanden zorgen voor een verschuiving voor jou?', a:2},
+  {t:'Terwijl je erin zweeft, welke andere zintuigen kun je gebruiken om je ervaring te verrijken?', a:2},
+  {t:'Wat kan er nu, in de toekomst, van dit alles worden?', a:3},
+  {t:'Welke andere gebieden kunnen positief worden beïnvloed waar je tot nu toe nog niet aan had gedacht?', a:3},
+  {t:'Wat heb je geïdentificeerd als het begin en einde hiervan?', a:4},
+  {t:'Hoe kan dit einde een nieuw begin zijn?', a:4}
+];
+const RHIZC={p:[4,5], cm:['r'], c:'Rhizomatische vragen nemen meer op: ze maken een vastgezet probleem weer tot een proces. Sluit af met: “Wat merk je nu op? Wat gebeurt er nu? Hoe is het in je lichaam?”'};
+const relItems=[
+  {t:'Je stelt een relatievraag (“Wat is de relatie tussen datgene waar je aandacht aan besteedt en datgene wat je voelt?”). Wat vraag je daarna?', o:['Wat gebeurt er nu?','Waarom voel je dat?','Kun je dat uitleggen?'], a:0, w:'Na elke relatievraag: “Wat gebeurt er nu?” Alles wat de cliënt teruggeeft is goed.'},
+  {t:'Er is een positieve shift zichtbaar na een relatievraag. Wat vraag je?', o:['Wat merk je in je lichaam?','Hoe komt dat, denk je?','Mooi, zullen we verder gaan?'], a:0, w:'Zodra er een positieve shift is: “Wat merk je in je lichaam?”'},
+  {t:'Je cliënt zegt: “Ik moet altijd sterk zijn.” Wat is een relatievraag?', o:['Wat is de relatie tussen sterk zijn en alles wat je nog niet voelt, maar wel zou kunnen voelen?','Waarom moet je altijd sterk zijn?','Volgens wie moet je sterk zijn?'], a:0, w:'Basisstructuur: de relatie tussen “het een” en “iets anders”. De derde optie is een meta-modelvraag.'},
+  {t:'Tijdens het tegenovergestelde spel zie je een fysiologische verandering. Wat doe je?', o:['Vragen: “Wat gebeurt er nu?”','Uitleggen wat je zag','Doorgaan met de volgende zin'], a:0},
+  {t:'Je cliënt raakt overspoeld en zit vast in zijn verhaal. Welke stap uit het STP zet je in?', o:['Creëer een andere relatie met de sensaties: merk op wat er nu met die sensatie gebeurt','Vraag naar de oorzaak van het probleem','Vat het verhaal samen'], a:0, w:'Stap 3 van het STP kun je op elk moment in de sessie doen.'},
+  {t:'Je wilt iemand uit de Beta-staat en het DMN halen. Waar begin je mee?', o:['De Alpha Sequence: ogen sluiten, tong en kaak ontspannen, langzaam ademen','Een uitgebreide anamnese','Het meta-model'], a:0}
+];
+const RELC={p:[1,2,4], cm:['r'], c:'Bevrijdende taal brengt de cliënt uit het verhaal naar de ervaring in het NU (kompas: nu en structuur, brein en lichaam). Zo komt het DMN tot rust en ontstaat ruimte voor nieuwe verbindingen.'};
+
+const ORDERS2={
+  katie:{t:'Zet de vier vragen van Byron Katie op volgorde.', s:['Is het waar? Kun je absoluut zeker zijn?','Hoe reageer je, wat gebeurt er wanneer je in deze gedachte gelooft?','Wie zou je zijn zonder deze gedachte?','Draai de gedachte om, en vraag: is het even waar of meer waar?']},
+  jyn:{t:'Zet de zes uitspraken van het Judge-Your-Neighbor-werkblad op volgorde.', s:['Emotie: Ik ben boos op… omdat…','Willen: Ik wil dat…','Advies: … zou moeten…','Nodig: Ik heb nodig dat…','Oordelen: … is…','Nooit meer: Ik wil nooit meer…'], w:'Bij de zesde omkering: “Ik ben bereid om…” en “Ik verheug me op…”. Bron: thework.com.'},
+  dubniet:{t:'Zet de stappen van het dubbele-niet-patroon op volgorde.', s:['Wie ben jij?','Hoe weet je dat?','Inductieve vraagwoorden om “ik” te deconstrueren','Alpha Sequence… Wie ben je NU?','Hoe weet je dat… NU?']},
+  tegen:{t:'Zet de stappen van het tegenovergestelde spel op volgorde.', s:['Maak het contract: waar wil je van af, waar wil je naartoe?','Stel het kader en de instructies voor het spel','Cliënt geeft een zin; jij helpt het tegenovergestelde te zeggen','Blijf spelen en vraag bij een fysiologische verandering: “Wat gebeurt er nu?”','Breng terug naar de trigger van de probleemstaat of koppel aan hulpbronnen','Vraag: “Is er nog iets anders dat je wilt veranderen?”']},
+  niets:{t:'Zet de stappen van Achterover in het NIETS op volgorde.', s:['Houd je ogen open en let op wat je voor je ziet','Sluit je ogen, let op wat je letterlijk voor je ziet: de achterkant van je oogleden','Alpha-reeks: tong, kaak, ademhaling','Open je ogen en let op wat je voor je ziet','Sluit je ogen: letterlijk de achterkant van je oogleden','Open je ogen en let op wat je voor je ziet','Sluit je ogen en let op wat je letterlijk achter je ziet: helemaal niets','Pak het niets uit']},
+  wonder:{t:'Zet de wondervraag op volgorde.', s:['Mag ik je een vraag stellen die misschien een beetje vreemd is?','Stel dat je naar huis gaat en je dag afmaakt zoals je normaal doet','En dan ga je naar bed','Terwijl je slaapt gebeurt er een wonder: de problemen zijn verdwenen','Maar je slaapt, dus je weet niet dat het wonder heeft plaatsgevonden','Als je morgen wakker wordt, waaraan merk je als eerste dat het wonder heeft plaatsgevonden?','Wat is er nog meer veranderd? Wat merk je dan? Hoe voelt dat?'], w:'Zegt de cliënt “dit kan toch niet”: “Doe alsof, doe alsof er een wonder heeft plaatsgevonden.”'},
+  cirkel:{t:'Zet de stappen van de cirkeltechniek op volgorde.', s:['Welke doelen heb je? (buitencirkel)','Welke kwaliteiten heb je? (binnencirkel)','Kies één doel uit de buitencirkel','Op een schaal van 0-10: hoe ver heb je dit doel al bereikt?','Op een schaal van 0-10: hoe gemotiveerd ben je?','Wat uit de binnencirkel kun je gebruiken voor een eerste stap?','Welke beslissing neem je nu?','Wat gaat deze beslissing je opleveren? Wat nog meer?']},
+  vervolg:{t:'Zet het oplossingsgerichte vervolggesprek op volgorde.', s:['Wat gaat er beter sinds ons vorige gesprek? Zelfs al is het maar een klein beetje?','Vraag naar details: wat, wie, waar, wanneer en hoe','Verander de focus: hoe kun je dit in stand houden?','Wat heb je nodig om te kunnen blijven doen wat werkt?','Doorloop de cyclus van een nieuw doel'], w:'Blijft de cliënt over problemen praten: patroononderbreking, uitleggen dat wat je water geeft groeit, of “Wat maakt dat het niet slechter is?”'},
+  egogram:{t:'Zet de stappen van het egogram op volgorde.', s:['Kies een context, situatie of vraag','Zet KO, VO, V, AK en VK naast elkaar','Teken een verticale staaf boven elke ego-toestand','Geef de hoogte aan naar hoeveel je die toestand in die situatie voelt','Vergelijk de staven en bespreek wat je ziet','Bedenk wat je eventueel zou willen veranderen','Bespreek wat dat oplevert','Welke eerste stap kun je hierin nemen?']},
+  intake:{t:'Zet het NLP Coachmodel in de volgorde van een intake.', s:['Huidige situatie: wat speelt er, in welke context?','Gewenste situatie: wat wil en kan iemand bereiken?','Hulpbronnen: wat is daarvoor nodig?','Belemmeringen: wat staat intern en extern in de weg?'], w:'In het model lopen hulpbronnen en interventies van de huidige naar de gewenste situatie; belemmeringen duwen terug.'}
+};
+const ORDERC={
+  katie:{p:[1,3,4], cm:['b'], c:'The Work volgt zelf de meta-structuur: vraag 1-2 in de probleemstaat, vraag 3 is eindstaat op identiteitsniveau, de omkering levert hulpbronnen.'},
+  jyn:{p:['k',1], cm:['b'], c:'Het werkblad haalt de beperkende gedachten op die je daarna met de vier vragen onderzoekt. Handig als voorbereiding of huiswerk.'},
+  dubniet:{p:[3,4], cm:['g','r'], c:'Verruimt identiteit: van een vast “ik” naar een continuüm. Sluit af in het NU met de Alpha Sequence.'},
+  tegen:{p:['k',4,5], cm:['r'], c:'Bouwt response potentieel op terwijl de cliënt in het NU blijft. Elke significante verandering kun je terugkoppelen naar de trigger van de probleemstaat (fase 5).'},
+  niets:{p:[2,4], cm:['r'], c:'Een inductie en een hulpbron om een ongewenste toestand te doorbreken. Geen geheugen of verbeelding gebruiken is cruciaal.'},
+  wonder:{p:[3], cm:['g'], c:'De wondervraag geeft de eindstaat. Associeer de cliënt in het wonder; de antwoorden leveren vaak al de eerste stap.'},
+  cirkel:{p:['k',4], cm:['g','r'], c:'De buitencirkel geeft het contract, de binnencirkel de hulpbronnen voor de eerste stap.'},
+  vervolg:{p:['k',5], cm:['h','r'], c:'In een vervolgsessie check je eerst wat werkt (fase 5 van de vorige keer) en maak je daarna een nieuw contract.'},
+  egogram:{p:['k',1], cm:['h'], c:'Een egogram maakt de huidige situatie zichtbaar en geeft richting aan wat de cliënt wil veranderen. Ook mooi met vloerankers.'},
+  intake:{p:['k'], cm:['h','g','r','b'], c:'Het coachmodel geeft je in de intake een basis om uit te diepen waar de cliënt voor komt en wat de context is.'}
+};
+
+const ORDERC1={
+  meta:{p:['k'], c:'De meta-structuur is je kaart: weet je in welke fase je zit, dan weet je welke vraag nu past.'},
+  sleutels:{p:['k',3], cm:['g'], c:'Toets het contract op haalbaarheid. Sleutel 4 en 5 maken de eindstaat zintuiglijk; sleutel 9 levert hulpbronnen, sleutel 10 checkt de ecologie.'},
+  stp:{p:[1,3,4], cm:['h','r'], c:'Haalt de cliënt uit het verhaal naar de sensatie in het NU, onder het niveau van labels. Stap 3 kun je op elk moment inzetten als de cliënt overspoeld raakt.'},
+  alpha:{p:[2], c:'Brengt de cliënt van Beta naar Alpha en het DMN tot rust: een goede brug naar dissociëren en trance.'},
+  mm3:{p:[1,4,5], cm:['b','r'], c:'Vraag 1-4 pacet het probleem, na de flip leiden 5-8 naar de oplossing. Vraag 8 bevestigt de verandering, een natuurlijke fase 5.'},
+  schaal:{p:['k',4], cm:['h','r'], c:'De schaal geeft huidige situatie en hulpbronnen tegelijk: alles tussen 0 en het cijfer is er al.'}
+};
+for(const k in ORDERS) ORDERS[k].key=k;
+for(const k in ORDERS2) ORDERS2[k].key=k;
+const ORDER_COACH=Object.assign({}, ORDERC1, ORDERC);
+
+/* ============ NEUROLOGISCHE NIVEAUS EN WAARDEN (Master-reader H2, H3, H4) ============ */
+const NL={om:'Omgeving', ge:'Gedrag', va:'Vaardigheden', ow:'Overtuigingen en waarden', id:'Identiteit', zi:'Zingeving / missie'};
+const NL_KEYS=['om','ge','va','ow','id','zi'];
+const NLQ={om:'Waar? Wanneer?', ge:'Wat?', va:'Hoe?', ow:'Waarom?', id:'Wie?', zi:'Waartoe? Wie of wat nog meer?'};
+/* niveau-labels bij cliëntuitspraken in bestaande oefeningen */
+['ow','om','om','ow','ow','ge','om','id','ow','om','ge','om','ge','ow','va','va','om','om','om',null,'om','om'].forEach((n,i)=>{if(n) mmItems[i].nl=n});
+['ge',null,'ow','ow','va',null,null,'ge','om','ge'].forEach((n,i)=>{if(n) driverItems[i].nl=n});
+['ge','ow','id','om','ge','om','va'].forEach((n,i)=>{if(n) dramaItems[i].nl=n});
+
+const nlItems=[
+  {t:'Het was ook zo onrustig in de klas.', a:'om', w:'Voorbeeld uit de reader: de oorzaak wordt in de omgeving gelegd; de leerling voelt zich niet aangesproken.'},
+  {t:'Op mijn werk is het altijd druk en rumoerig.', a:'om'},
+  {t:'Je hebt het veel te snel gemaakt.', a:'ge', w:'De oorzaak ligt bij het gedrag, en gedrag kun je veranderen.'},
+  {t:'Ik stel alles uit tot het laatste moment.', a:'ge'},
+  {t:'Ik zeg in vergaderingen nooit iets.', a:'ge'},
+  {t:'Je hebt nog niet zoveel inzicht in die sommen, hè?', a:'va', w:'Gaat over vermogens; daar heb je zelf invloed op.'},
+  {t:'Ik weet niet hoe ik nee moet zeggen.', a:'va'},
+  {t:'Een heleboel meisjes haken uiteindelijk af bij wiskunde.', a:'ow', w:'Een overtuiging die het zelfbeeld en het hele leerproces beïnvloedt.'},
+  {t:'Je moet anderen nooit tot last zijn.', a:'ow'},
+  {t:'Vrijheid is voor mij het allerbelangrijkste.', a:'ow'},
+  {t:'Je bent nu eenmaal zwak in wiskunde.', a:'id', w:'Zo’n opmerking raakt iemand in zijn identiteit.'},
+  {t:'Ik ben gewoon geen leider.', a:'id'},
+  {t:'Ik ben een mislukkeling.', a:'id'},
+  {t:'Ik weet niet meer waar ik het allemaal voor doe.', a:'zi'},
+  {t:'Ik wil met mijn werk iets bijdragen aan anderen.', a:'zi'}
+];
+const NLC={
+  om:{p:[1], cm:['h'], c:'De cliënt legt het probleem buiten zichzelf. Een oplossing ligt nooit op het niveau van het probleem: vraag wat hij doet in die omgeving en ga stap voor stap omhoog.'},
+  ge:{p:[1], cm:['h'], c:'Gedrag is concreet en veranderbaar. Ga een niveau hoger: wat kan of heeft de cliënt nodig om het anders te doen?'},
+  va:{p:[1,4], cm:['r','b'], c:'Vaardigheden zijn hulpbronnen of ontbrekende middelen. Vraag ook waarom het belangrijk is: dan kom je bij waarden en motivatie.'},
+  ow:{p:[1,3], cm:['b','g'], c:'Overtuigingen en waarden geven richting en toestemming. Beperkende overtuigingen onderzoek je met het meta-model of The Work; waarden maken de gewenste situatie krachtig.'},
+  id:{p:[3,4], cm:['g'], c:'Hier wil je naartoe in coaching: identiteit verruimen. Een beperkende identiteitszin (“ik ben een mislukkeling”) maak je los door gedrag van identiteit te scheiden, en in fase 3 vraag je: “Hoe zou je zijn als persoon…?”'},
+  zi:{p:[3,6], cm:['g'], c:'Zingeving organiseert alle niveaus eronder. Verbind de gewenste situatie aan wat de cliënt wil uitdragen; sterk voor eindstaat-energie en de future pace.'}
+};
+const nlUpItems=[
+  {t:'De cliënt zegt: “Mijn collega’s zijn zo druk.” (omgeving) Welke vraag brengt hem een niveau hoger?', o:['Wat doe jij als je collega’s zo druk zijn?','Welke collega’s precies?','Sinds wanneer is het zo druk?'], a:0, w:'Van omgeving naar gedrag. De andere vragen blijven op het niveau van de omgeving.'},
+  {t:'De cliënt zegt: “Ik zeg in vergaderingen nooit iets.” (gedrag) Welke vraag brengt hem een niveau hoger?', o:['Wat zou je nodig hebben om het wel te kunnen?','In welke vergaderingen?','Nooit?'], a:0, w:'Van gedrag naar vaardigheden: hoe?'},
+  {t:'De cliënt zegt: “Ik kan gewoon niet plannen.” (vaardigheden) Welke vraag brengt hem een niveau hoger?', o:['Waarom is het belangrijk voor je om dat te kunnen?','Welke planner gebruik je?','Wat doe je nu als je plant?'], a:0, w:'Van vaardigheden naar waarden: waarom?'},
+  {t:'De cliënt zegt: “Eerlijkheid is voor mij het belangrijkst.” (waarden) Welke vraag brengt hem een niveau hoger?', o:['Wie ben jij als je helemaal eerlijk bent?','Wanneer ben je eerlijk?','Wat doe je als je eerlijk bent?'], a:0, w:'Van waarden naar identiteit: wie?'},
+  {t:'De cliënt zegt: “Ik ben een rustige, betrokken vader.” (identiteit) Welke vraag brengt hem een niveau hoger?', o:['Waartoe? Wat draag je met wie je bent uit, ook buiten je gezin?','Wanneer ben je rustig?','Hoe doe je dat, betrokken zijn?'], a:0, w:'Van identiteit naar zingeving: waartoe, wie of wat nog meer?'},
+  {t:'De cliënt zit in fase 1 en beschrijft chaos op zijn werk. Je wilt naar eindstaat-energie. Welke vraag past?', o:['Hoe zou je zijn als persoon als dit probleem er niet meer is?','Wie veroorzaakt die chaos?','Hoe lang speelt dit al?'], a:0, w:'In de meta-structuur ga je in fase 3 rechtstreeks naar identiteit.'}
+];
+const NLUPC={p:[1,3], cm:['h','g'], c:'Een hoger niveau organiseert de lagere: verandering op identiteit werkt door in vaardigheden, gedrag en omgeving. Zo beweeg je in de sessie van probleembeschrijving (fase 1) naar eindstaat-energie (fase 3).'};
+const nlComItems=[
+  {t:'Je cliënt komt voor de derde keer te laat. Welke feedback is op het juiste niveau?', o:['Je kwam vandaag later dan we hadden afgesproken.','Jij bent echt onbetrouwbaar.','Zo zijn mensen tegenwoordig.'], a:0, w:'Feedback op gedrag kun je veranderen. Gedrag verwarren met identiteit beschadigt het zelfbeeld.'},
+  {t:'Je cliënt zegt: “Ik ben een sufferd.” Welke herformulering scheidt gedrag van identiteit?', o:['Je deed vandaag iets wat je sufferig vond.','Iedereen is weleens een sufferd.','Dat ben je niet.'], a:0, w:'Van “ik ben” naar “ik deed”: zo komt er ruimte voor ander gedrag.'},
+  {t:'Je cliënt zette een moedige stap. Hoe versterk je de identiteit?', o:['Je bent iemand die durft.','Dat ging redelijk.','Volgende keer kan het sneller.'], a:0, w:'Om het zelfbeeld te versterken mag je juist positief op identiteit benoemen: “Je bent goed!”'},
+  {t:'Je cliënt zegt: “Ik ben ongemotiveerd.” Welke vraag opent het?', o:['Wanneer gedraag je je ongemotiveerd, en wanneer niet?','Waarom ben je zo ongemotiveerd?','Hoe lang ben je al ongemotiveerd?'], a:0, w:'Van identiteit naar gedrag in een context, met ruimte voor een uitzondering.'}
+];
+const NLCOMC={p:[1,5], cm:['b','r'], c:'Taal verwart gemakkelijk gedrag met identiteit (“je bent gek” in plaats van “je doet gek”). Hoor het bij de cliënt in fase 1, en gebruik het bewust in fase 5: benoem verandering als iets van wie de cliënt is.'};
+
+const WAARDE=['Waarde (doel op zich)','Middel (doorvragen: wat levert het je op?)'];
+const waardeItems=[
+  {t:'Geld', a:1, plain:true, w:'Een containerbegrip. Vraag: “Wat betekent geld voor jou?” of “Wat doet het hebben van geld met jou?”'},
+  {t:'Vrijheid', a:0, plain:true, w:'Waarden zijn nominalisaties, zoals vrijheid, zekerheid, voldoening.'},
+  {t:'Een nieuwe auto', a:1, plain:true},
+  {t:'Zekerheid', a:0, plain:true},
+  {t:'Een vaste baan', a:1, plain:true},
+  {t:'Erkenning', a:0, plain:true},
+  {t:'Een promotie', a:1, plain:true},
+  {t:'Verbondenheid', a:0, plain:true}
+];
+const WAARDEC={p:['k',3], cm:['g'], c:'Achter een middel zit een waarde. Vraag door tot de waarde: die maakt de gewenste situatie en de eindstaat-energie krachtig, en voorkomt dat je op een middel coacht.'};
+const RICHT=['Naar-toe (benaderend)','Weg-van (vermijdend)'];
+const richtItems=[
+  {t:'Ik wil niet meer zo moe zijn.', a:1},
+  {t:'Ik wil rust in mijn hoofd.', a:0},
+  {t:'Ik wil geen ruzie meer met mijn zus.', a:1},
+  {t:'Ik wil meer plezier in mijn werk.', a:0},
+  {t:'Ik wil niet langer het gevoel hebben dat ik tekortschiet.', a:1},
+  {t:'Ik wil me vrij voelen om mijn eigen keuzes te maken.', a:0}
+];
+const RICHTC=[
+  {p:['k',3], cm:['g'], c:'Benaderend: motiveer met een doel en een beloning. Bouw daarop de eindstaat-energie.'},
+  {p:['k'], cm:['b','g'], c:'Vermijdend: maak het contract positief (sleutel 2): “Wat wil je in plaats daarvan?” Veel vermijden kan wijzen op onverwerkte emotie achter een waarde.'}
+];
+const posItems=[
+  {t:'Je cliënt zegt: “Ik wil niet meer piekeren.” Wat is je beste vervolgvraag voor het contract?', o:['Wat wil je in plaats daarvan?','Waarom pieker je?','Hoe vaak pieker je?'], a:0, w:'Positief uitgedrukt, sleutel 2 van een haalbare uitkomst.'},
+  {t:'Je cliënt zegt: “Ik wil geld.” Wat vraag je door?', o:['Wat betekent geld voor jou?','Hoeveel geld?','Waarom heb je nu te weinig?'], a:0, w:'Van containerbegrip naar waarde.'},
+  {t:'Je cliënt noemt “zekerheid” als waarde. Hoe ga je twee spaden diep?', o:['Waarom is zekerheid belangrijk voor je? En waarom is dát belangrijk?','Wat is zekerheid precies?','Heb je nu genoeg zekerheid?'], a:0, w:'Twee spaden diep: blijf “waarom is dat belangrijk?” vragen en let op benaderen en vermijden in de taal.'}
+];
+const POSC={p:['k',3], cm:['g'], c:'Een positief geformuleerd doel met een heldere waarde erachter is de basis voor je contract en voor eindstaat-energie.'};
+const WSTAP=['Elicitatie','Hiërarchie','Motivatiewaarde','Go / stay loop','Twee spaden diep'];
+const wstapItems=[
+  {t:'Wat is voor jou belangrijk in de context van je werk?', a:0},
+  {t:'Stel je hebt wel vrijheid maar geen zekerheid, of wel zekerheid maar geen vrijheid. Waar kies je voor?', a:1},
+  {t:'Ga terug naar een moment waarin je heel erg gemotiveerd was. Wat zorgde ervoor?', a:2},
+  {t:'Als al deze waarden aanwezig zijn, wat zou ervoor kunnen zorgen dat je toch vertrekt?', a:3},
+  {t:'Stel je staat met de deurknop in je hand: wat maakt dat je toch blijft?', a:3},
+  {t:'Wat betekent deze waarde voor jou?', a:4},
+  {t:'Wat is voor jou het tegengestelde van deze waarde?', a:4}
+];
+const WSTAPC=[
+  {p:['k'], cm:['g'], c:'Elicitatie in een context geeft de taal van de cliënt voor wat belangrijk is: bruikbaar in het contract.'},
+  {p:['k',3], cm:['g'], c:'De bovenste drie of vier waarden sturen het gedrag. Kalibreer goed: non-verbaal wordt veel gecommuniceerd.'},
+  {p:[4], cm:['r'], c:'Een moment van motivatie is ook een hulpbronstaat: associeer de cliënt erin.'},
+  {p:['k'], cm:['b','g'], c:'Go/stay brengt verborgen waarden boven die toch de doorslag geven, vaak een belemmering die bij het contract hoort.'},
+  {p:[1,3], cm:['b','g'], c:'De betekenis, de flipside en de verhouding benaderen/vermijden laten zien of er onverwerkte emotie achter de waarde zit.'}
+];
+const INC=['Opeenvolgende incongruentie (binnen één waarde)','Gelijktijdige incongruentie (tussen waarden)'];
+const incItems=[
+  {t:'Ik wil geld verdienen, want ik wil nooit meer armoede.', a:0, w:'Geld wordt benaderd, armoede vermeden: binnen één waarde. Mogelijke interventie volgens de reader: Timeline.'},
+  {t:'Ik wil zekerheid, maar ook vrijheid, en die bijten elkaar.', a:1, w:'Twee waarden die allebei benaderd worden en botsen. Mogelijke interventie: Visual Squash.'},
+  {t:'Ik wil succes, vooral omdat ik bang ben om te falen.', a:0},
+  {t:'Mijn gezin is belangrijk, en mijn carrière ook, en ik kan niet kiezen.', a:1}
+];
+const INCC={p:[1,4], cm:['b'], c:'Een conflict in waarden is een belemmering. Een gelijktijdig conflict kun je met delenwerk (Visual Squash, polariteiten) in de hulpbronstaat oplossen; ga pas daarna waarden verschuiven.'};
+
+const ORDERS3={
+  lla:{t:'Zet Logical Level Alignment op volgorde.', s:['Omgeving: waar ben ik, wat zie, hoor en voel ik?','Gedrag: wat doe ik daar?','Vaardigheden: welke vaardigheden zet ik in?','Waarden en overtuigingen: waarom is dit belangrijk?','Identiteit: wie ben ik?','Missie: wat draag ik uit?','Anker de toestand in missie, eventueel met een symbool','Ga terug langs alle niveaus: “gesteund door je missie…”'], key:'lla'},
+  wop:{t:'Zet het opvragen van waarden op volgorde.', s:['Elicitatie: wat is voor jou belangrijk in de context van…?','Hiërarchie: zet de waarden in volgorde','Motivatiewaarde en go/stay loop','Twee spaden diep: per waarde doorvragen'], key:'wop'},
+  spaden:{t:'Zet de stappen van “twee spaden diep” op volgorde.', s:['Wat betekent deze waarde voor jou?','Waarom is deze waarde belangrijk voor je? En waarom is dat belangrijk?','Welke interne voorstelling heb je bij deze waarde?','Wat is de flipside, het tegengestelde van deze waarde?','Waar en wanneer heb je die flipside voor het eerst ervaren?','Welke niet-functionele emotie zit er nog aan vast?','Hoeveel procent benaderen, hoeveel vermijden?'], key:'spaden'}
+};
+Object.assign(ORDER_COACH, {
+  lla:{p:[3,4,6], cm:['g','r'], c:'Alignment brengt alle niveaus op één lijn met de missie. De ervaring van missie en identiteit is een sterke hulpbronstaat, die je terugbrengt naar gedrag en omgeving: een future pace door alle niveaus.'},
+  wop:{p:['k',3], cm:['g'], c:'Waarden opvragen geeft het waarom achter het contract. De kernwaarden kun je gebruiken voor eindstaat-energie.'},
+  spaden:{p:[1,3], cm:['b','g'], c:'Twee spaden diep laat zien of een waarde vooral benaderend of vermijdend gestuurd wordt. Veel vermijden is een belemmering om eerst mee te werken.'}
+});
+
+/* ============ DECKS ============ */
+const DECKS = [
+  {id:'meta', mod:1, title:'Meta-structuur op volgorde', desc:'De zes stappen van een sessie', kind:'order', items:[ORDERS.meta]},
+  {id:'fase', mod:1, title:'Welke fase is dit?', desc:'Coachvraag → fase in de meta-structuur', kind:'mc', ask:'In welke fase stel je deze vraag?', options:PHASES, items:phaseItems, one:true},
+  {id:'vlieger', mod:1, title:'Vlieger-meter', desc:'Welk breindeel spreekt je vraag aan?', kind:'mc', ask:'Welk deel van de vlieger spreek je aan?', options:BRAIN, items:brainItems,
+    tip:()=>'Echte verandering vraagt alle vier: denkbrein links, rechts, voelbrein en PFC. Volgorde 1-3-4-2 kan ook.'},
+  {id:'sleutels', mod:1, title:'Sleutels voor een haalbare uitkomst', desc:'De 11 sleutels voor een intake', kind:'order', items:[ORDERS.sleutels]},
+  {id:'stp', mod:1, title:'STP en Alpha Sequence', desc:'Volgorde bij overspoeld raken en naar alpha', kind:'order', items:[ORDERS.stp, ORDERS.alpha]},
+  {id:'mm', mod:2, title:'Meta-model: patroon herkennen', desc:'Welk taalpatroon hoor je?', kind:'mc', ask:'Welk meta-model-patroon hoor je?', optMap:MM, items:mmItems,
+    coach:(it)=>({p:MM[it.a].p,c:MM[it.a].c}), why:(it)=>MM[it.a].d, tip:(it)=>'Meta-vraag: “'+it.q+'” — '+MM[it.a].e},
+  {id:'mmq', mod:2, title:'Meta-model: de juiste vraag', desc:'Kies de meta-vraag die het patroon uitvraagt', kind:'mmq', items:mmItems, coach:(it)=>({p:MM[it.a].p,c:MM[it.a].c}), tip:(it)=>MM[it.a].n+': '+MM[it.a].e},
+  {id:'vo', mod:2, title:'Vooronderstellingen van taal', desc:'Negen soorten, uit de coach-reader', kind:'mc', ask:'Welke vooronderstelling zit hierin?', optMap:PRESUP, items:presupItems, coach:(it)=>PRESUPC[it.a],
+    why:(it)=>PRESUP[it.a].d},
+  {id:'milton', mod:2, title:'Milton-patronen', desc:'Herken de trance-taal', kind:'mc', ask:'Welk Milton-patroon is dit?', optMap:MILTON, items:miltonItems, coach:(it)=>MILTONC[it.a]},
+  {id:'mvm', mod:2, title:'Meta of Milton?', desc:'Specificeren of vaag laten', kind:'mc', ask:'Is dit meta-model of Milton-model?', options:['Meta-model (specificeren)','Milton-model (vaag laten)'], items:mmVsMilton, one:true, coach:(it)=>MVMC[it.a]},
+  {id:'chunk', mod:2, title:'Chunken', desc:'Omhoog, omlaag of lateraal?', kind:'mc', ask:'Welke kant chunk je op met deze vraag?', options:['Upchunken (abstracter)','Downchunken (specifieker)','Lateraal chunken'], items:chunkItems, one:true, coach:(it)=>CHUNKC[it.a]},
+  {id:'ogw', mod:3, title:'Oplossingsgerichte vraagtypes', desc:'Wonder, schaal, uitzondering, coping…', kind:'mc', ask:'Welk type oplossingsgerichte vraag is dit?', optMap:OGW, items:ogwItems, coach:(it)=>({p:OGW[it.a].p,c:OGW[it.a].c})},
+  {id:'mm3', mod:3, title:'Meta Model III op volgorde', desc:'De 8 vragen met de flip', kind:'order', items:[ORDERS.mm3]},
+  {id:'schaal', mod:3, title:'Schaalvraag uitgebreid', desc:'De zes stappen uit de oefening', kind:'order', items:[ORDERS.schaal]},
+  {id:'ego', mod:4, title:'Welke ego-toestand?', desc:'KO, VO, V, AK of VK', kind:'mc', ask:'Uit welke ego-toestand komt deze zin?', options:EGO, items:egoItems, coach:(it)=>EGOC[it.a]},
+  {id:'driver', mod:4, title:'Driver-detector', desc:'Herken de driver in de taal', kind:'mc', ask:'Welke driver hoor je?', options:DRIVERS, items:driverItems, coach:(it)=>DRIVERC[it.a],
+    tip:(it)=>'Allower: '+ALLOW[it.a]+' (allower volgens Julie Hay)'},
+  {id:'allow', mod:4, title:'Allowers', desc:'Welke toestemming hoort bij de driver?', kind:'mc', ask:'Welke allower hoort bij deze driver?', options:ALLOW, one:true, src:'aanvulling', coach:()=>ALLOWC,
+    items:DRIVERS.map((d,i)=>({t:d, a:i, plain:true, src:'aanvulling', w:'Allowers uit het essay van Julie Hay over drivers en werkstijlen.'}))},
+  {id:'stopper', mod:4, title:'Stoppers', desc:'Welke stopper zit achter de boodschap?', kind:'mc', ask:'Welke stopper hoort bij deze boodschap?', options:STOPPERS, items:stopperItems, coach:()=>STOPC},
+  {id:'drama', mod:4, title:'Dramadriehoek', desc:'Herken de rol', kind:'mc', ask:'Welke rol uit de dramadriehoek hoor je?', options:DRAMA, items:dramaItems, one:true, coach:(it)=>DRAMAC[it.a],
+    tip:(it)=>'Winnaarsrol: '+['assertief en kwetsbaar','coach en zorgzaam','eerlijk en verantwoordelijk'][it.a]+'. De rollen zijn uitwisselbaar: een Redder die zich niet gewaardeerd voelt, wordt Slachtoffer of Aanklager.'},
+  {id:'win', mod:4, title:'Van drama naar winnaar', desc:'Kies de reactie uit de winnaarsdriehoek', kind:'mc', ask:'', items:winItems, one:true, perItem:true, coach:()=>WINC},
+  {id:'intake', mod:1, title:'NLP Coachmodel', desc:'De vier elementen van de intake', kind:'order', items:[ORDERS2.intake]},
+  {id:'cm', mod:1, title:'Coachmodel: welk element?', desc:'Huidige, gewenste situatie, hulpbronnen, belemmeringen', kind:'mc', ask:'Bij welk element van het coachmodel hoort deze vraag?', options:Object.values(CM), items:cmItems, one:true, coach:(it)=>CMC[it.a]},
+  {id:'score', mod:1, title:'SCORE-model', desc:'Symptoms, Cause, Outcome, Resources, Effect', kind:'mc', ask:'Bij welk element van het SCORE-model hoort deze vraag?', options:SCORE, items:scoreItems, one:true, coach:(it)=>SCOREC[it.a]},
+  {id:'anam', mod:1, title:'Anamnesevragen', desc:'Bij welk onderdeel van de leidraad hoort de vraag?', kind:'mc', ask:'Bij welk onderdeel van de anamnese hoort deze vraag?', options:ANAM, items:anamItems, coach:()=>ANAMC},
+  {id:'db', mod:2, title:'Dubbele bindingen', desc:'Vijf soorten uit het Milton-model', kind:'mc', ask:'Welke soort dubbele binding is dit?', options:DB, items:dbItems, one:true, coach:(it)=>DBC[it.a]},
+  {id:'som', mod:2, title:'Sleight of Mouth', desc:'16 patronen om een overtuiging te verschuiven', kind:'mc', ask:'Uitspraak: “'+SOM_STMT+'” Welk Sleight of Mouth-patroon gebruikt dit antwoord?', options:SOM, items:somItems, coach:()=>SOMC},
+  {id:'frames', mod:2, title:'Frames en kaders', desc:'Outcome, ecologie, evidence, as if, backtrack', kind:'mc', ask:'Welk frame gebruik je hier?', options:FRAMES, items:frameItems, one:true, coach:(it)=>FRAMEC[it.a]},
+  {id:'metaf', mod:2, title:'Soorten metaforen', desc:'Gezegde, beeldspraak, anekdote, verhaal', kind:'mc', ask:'Welke soort metafoor is dit?', options:METAF, items:metafItems, coach:()=>METAFC},
+  {id:'wonder', mod:3, title:'Wondervraag op volgorde', desc:'De opbouw van de vraag', kind:'order', items:[ORDERS2.wonder]},
+  {id:'cirkel', mod:3, title:'Cirkeltechniek', desc:'Van doelen en kwaliteiten naar een eerste stap', kind:'order', items:[ORDERS2.cirkel]},
+  {id:'vervolg', mod:3, title:'Vervolggesprek', desc:'Oplossingsgericht verder na de eerste sessie', kind:'order', items:[ORDERS2.vervolg]},
+  {id:'stroke', mod:4, title:'Soorten strokes', desc:'Positief of negatief, voorwaardelijk of niet', kind:'mc', ask:'Wat voor stroke is dit?', options:STROKE, items:strokeItems, coach:()=>STROKEC},
+  {id:'sprof', mod:4, title:'Strokeprofiel', desc:'Geven, accepteren, vragen, afwijzen', kind:'mc', ask:'Welk deel van het strokeprofiel hoor je?', options:SPROF, items:sprofItems, coach:()=>SPROFC},
+  {id:'ds', mod:4, title:'Driver of stopper?', desc:'Het drenkelingdiagram', kind:'mc', ask:'Is dit een driver of een stopper?', options:['Driver','Stopper'], items:dsItems, one:true, coach:(it)=>DSC[it.a]},
+  {id:'egogram', mod:4, title:'Egogram maken', desc:'De stappen van de oefening', kind:'order', items:[ORDERS2.egogram]},
+  {id:'katieo', mod:5, title:'The Work op volgorde', desc:'De vier vragen van Byron Katie', kind:'order', items:[ORDERS2.katie]},
+  {id:'katie', mod:5, title:'Welke vraag van The Work?', desc:'Herken de vraag en de subvragen', kind:'mc', ask:'Bij welke vraag van Byron Katie hoort dit?', options:KATIE, items:katieItems, one:true, coach:(it)=>KATIEC[it.a]},
+  {id:'turn', mod:5, title:'Omkeringen', desc:'Op jezelf, op de ander, het tegenovergestelde', kind:'mc', ask:'Welke soort omkering is dit?', options:TURN, items:turnItems, one:true, coach:()=>TURNC},
+  {id:'jyn', mod:5, title:'Judge-Your-Neighbor', desc:'Het werkblad van The Work', kind:'order', items:[ORDERS2.jyn], src:'aanvulling'},
+  {id:'induc', mod:5, title:'Inductieve vraagwoorden', desc:'Het dubbele-niet-patroon van Overdurf', kind:'mc', ask:'Op welk niveau werkt dit vraagwoord?', options:INDUC, items:inducItems, one:true, coach:()=>INDUCC},
+  {id:'dubniet', mod:5, title:'Dubbele-niet-patroon', desc:'De stappen op volgorde', kind:'order', items:[ORDERS2.dubniet]},
+  {id:'rel', mod:5, title:'Wat vraag je nu?', desc:'Relatievragen, tegenovergestelde spel, STP', kind:'mc', ask:'', items:relItems, one:true, perItem:true, coach:()=>RELC},
+  {id:'tegen', mod:5, title:'Het tegenovergestelde spel', desc:'De stappen op volgorde', kind:'order', items:[ORDERS2.tegen]},
+  {id:'rhiz', mod:5, title:'Rhizomatisch onderzoek', desc:'Vragen om meer op te nemen', kind:'mc', ask:'Bij welk principe hoort deze vraag?', options:RHIZ, items:rhizItems, one:true, coach:()=>RHIZC},
+  {id:'niets', mod:5, title:'Achterover in het NIETS', desc:'Het patroon op volgorde', kind:'order', items:[ORDERS2.niets]},
+  {id:'nlniv', mod:6, title:'Op welk niveau praat de cliënt?', desc:'Omgeving tot zingeving', kind:'mc', ask:'Op welk neurologisch niveau zit deze uitspraak?', optMap:NL, items:nlItems, coach:(it)=>NLC[it.a]},
+  {id:'nlup', mod:6, title:'Een niveau hoger', desc:'Kies de vraag die de cliënt omhoog brengt', kind:'mc', ask:'', items:nlUpItems, one:true, perItem:true, coach:()=>NLUPC},
+  {id:'nlcom', mod:6, title:'Communicatie op niveau', desc:'Gedrag en identiteit uit elkaar houden', kind:'mc', ask:'', items:nlComItems, one:true, perItem:true, coach:()=>NLCOMC},
+  {id:'lla', mod:6, title:'Logical Level Alignment', desc:'De niveaus op één lijn', kind:'order', items:[ORDERS3.lla]},
+  {id:'waarde', mod:6, title:'Middel of waarde?', desc:'Vraag door tot wat er echt belangrijk is', kind:'mc', ask:'Is dit een waarde of een middel?', options:WAARDE, items:waardeItems, one:true, coach:()=>WAARDEC},
+  {id:'richt', mod:6, title:'Naar-toe of weg-van?', desc:'Het richtingsfilter in de taal van de cliënt', kind:'mc', ask:'Beweegt de cliënt ergens naartoe of ergens vandaan?', options:RICHT, items:richtItems, one:true, coach:(it)=>RICHTC[it.a]},
+  {id:'pos', mod:6, title:'Doorvragen op waarden', desc:'Positief formuleren en twee spaden diep', kind:'mc', ask:'', items:posItems, one:true, perItem:true, coach:()=>POSC},
+  {id:'wstap', mod:6, title:'Waarden opvragen: welke stap?', desc:'Elicitatie, hiërarchie, motivatie, go/stay', kind:'mc', ask:'Bij welke stap van waarden opvragen hoort deze vraag?', options:WSTAP, items:wstapItems, one:true, coach:(it)=>WSTAPC[it.a]},
+  {id:'wop', mod:6, title:'Waarden opvragen op volgorde', desc:'De vier stappen en twee spaden diep', kind:'order', items:[ORDERS3.wop, ORDERS3.spaden]},
+  {id:'inc', mod:6, title:'Conflicten in waarden', desc:'Binnen één waarde of tussen waarden?', kind:'mc', ask:'Wat voor conflict is dit?', options:INC, items:incItems, one:true, coach:()=>INCC}
+];
+const MODULES = {1:'Meta-structuur, intake en contract', 2:'Meta-, Milton- en overtuigingstaal', 3:'Oplossingsgericht en Meta Model III', 4:'Transactionele Analyse', 5:'Bevrijdende taal: Overdurf en Byron Katie', 6:'Neurologische niveaus en waarden'};
+
+/* ============ OPSLAG (alleen in deze browser) ============ */
+const KEY='nlpcoach.v1';
+const today=()=>{const d=new Date(); return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5)};
+const INTERVAL=[0,1,3,7,14,30];
+let S={items:{}, days:[], min:10};
+try{const raw=localStorage.getItem(KEY); if(raw) S=Object.assign(S, JSON.parse(raw));}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY, JSON.stringify(S))}catch(e){}};
+const rec=(k)=>S.items[k]||{box:0,last:null,seen:0,ok:0};
+const due=(k)=>{const r=S.items[k]; if(!r) return true; return today()-r.last >= INTERVAL[r.box]};
+function mark(k, ok){
+  const r=rec(k); r.seen++; if(ok){r.ok++; r.box=Math.min(r.box+1,5)} else r.box=Math.max(r.box-2,0);
+  r.last=today(); S.items[k]=r; if(!S.days.includes(today())) S.days.push(today()); save();
+}
+const keysOf=(d)=>d.items.map((_,i)=>d.id+':'+i);
+function mastery(d){const ks=keysOf(d); return ks.reduce((s,k)=>s+Math.min(rec(k).box,3)/3,0)/ks.length}
+function streak(){const set=new Set(S.days); let n=0, t=today(); if(!set.has(t)) t--; while(set.has(t)){n++; t--} return n}
+
+/* ============ HULPFUNCTIES ============ */
+const $=(s,r=document)=>r.querySelector(s);
+const esc=(s)=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shuffle=(a)=>{a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]} return a};
+const deckById=(id)=>DECKS.find(d=>d.id===id);
+const GOOD=['Goed gehoord.','Precies.','Klopt.','Mooi gezien.','Raak.'];
+const pick=(a)=>a[Math.floor(Math.random()*a.length)];
+const phChips=(ps)=>(ps||[]).map(x=>`<span class="ph">${esc(PH[x])}</span>`).join('');
+const cmChips=(cs)=>(cs||[]).map(x=>`<span class="ph cmc">${esc(CM[x])}</span>`).join('');
+const coachBlock=(co)=>co?`<div class="tip stack-s"><b>Wat doe je ermee in je coaching</b><span class="row">${phChips(co.p)}${cmChips(co.cm)}</span><p>${esc(co.c)}</p></div>`:'';
+
+/* ============ WEERGAVEN ============ */
+let view='vandaag';
+const ICON={
+  vandaag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 9-7 9-7-9z"/><path d="M12 3v18M5 12h14"/></svg>',
+  oefenen:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5"/></svg>',
+  naslag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h10a4 4 0 014 4v12H9a4 4 0 01-4-4z"/><path d="M9 9h6"/></svg>',
+  voortgang:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>'
+};
+function renderTabs(){
+  const names={vandaag:'Vandaag',oefenen:'Oefenen',naslag:'Naslag',voortgang:'Voortgang'};
+  $('#tabs').innerHTML=Object.keys(names).map(k=>`<button type="button" data-tab="${k}" ${view===k?'aria-current="page"':''}>${ICON[k]}<span>${names[k]}</span></button>`).join('');
+  $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{view=b.dataset.tab; render(); window.scrollTo(0,0)});
+}
+function deckRow(d){
+  const m=Math.round(mastery(d)*100), n=d.items.length;
+  return `<button type="button" class="deck" data-deck="${d.id}"><span class="t">${esc(d.title)} ${d.src?'<span class="chip">aanvulling</span>':''}</span><span class="n">${n} ${n===1?'oefening':'items'}<br>${m}%</span><span class="d">${esc(d.desc)}</span><span class="bar"><i style="width:${m}%"></i></span></button>`;
+}
+function vandaag(){
+  const allKeys=DECKS.flatMap(keysOf), dueN=allKeys.filter(due).length;
+  return `<div class="stack">
+    <div class="top"><div class="stack-s"><span class="eyebrow">NLP Coach met Impact</span><h1>Oefenruimte</h1></div>
+      <div class="streak"><b>${streak()}</b>${streak()===1?'dag':'dagen'} op rij</div></div>
+    <section class="today" aria-labelledby="t-h">
+      <div class="stack-s"><span class="eyebrow" style="color:inherit;opacity:.8">Vandaag</span><h2 id="t-h">Je oefenset staat klaar</h2>
+      <p class="sub">${dueN} van ${allKeys.length} items zijn aan de beurt. Wat je lastig vindt, komt vaker terug.</p></div>
+      <div class="seg" role="group" aria-label="Duur">${[5,10,20].map(m=>`<button type="button" data-min="${m}" aria-pressed="${S.min===m}">${m} min</button>`).join('')}</div>
+      <button type="button" class="go" id="go"><span>Oefen vandaag</span><span aria-hidden="true">→</span></button>
+    </section>
+    <div class="stack-s"><span class="eyebrow">Kompas in elke sessie</span>
+      <div class="kompas"><div><b>Identiteit</b>verruimen</div><div><b>Relatie</b>veranderen</div><div><b>Nu</b>&amp; structuur</div><div><b>Brein</b>&amp; lichaam</div></div></div>
+    <div class="stack-s"><span class="eyebrow">Snel beginnen</span>${['mm','fase','ego','ogw'].map(id=>deckRow(deckById(id))).join('')}</div>
+  </div>`;
+}
+function oefenen(){
+  return `<div class="stack"><div class="stack-s"><span class="eyebrow">Alle oefeningen</span><h1>Oefenen</h1>
+    <p class="muted">Kies een onderwerp. Het percentage laat zien hoe goed je het beheerst.</p></div>
+    ${[1,2,3,4,5,6].map(m=>`<section class="module"><div class="module-h"><h2>${m} · ${esc(MODULES[m])}</h2></div>${DECKS.filter(d=>d.mod===m).map(deckRow).join('')}</section>`).join('')}
+  </div>`;
+}
+function tbl(head, rows){return `<div class="tbl"><table><thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`}
+function naslag(){
+  const ref=(t,body,src)=>`<details class="ref"><summary><span>${t} ${src?'<span class="chip">aanvulling</span>':''}</span></summary><div class="body">${body}</div></details>`;
+  return `<div class="stack"><div class="stack-s"><span class="eyebrow">Spiekkaarten uit de readers</span><h1>Naslag</h1></div>
+  ${ref('Meta-structuur in coaching', `<ol class="plain">${ORDERS.meta.s.map(s=>`<li>${esc(s)}</li>`).join('')}</ol><p class="muted">Beginvragen: Wat zou je graag voor jezelf willen vandaag? Waar wil je vandaag mee werken? Waar zou je graag aan verandering in willen? Waar heb je last van en zou je willen switchen?</p>`)}
+  ${ref('Taal per fase van de meta-structuur', phaseOverview())}
+  ${ref('Taal per element van het coachmodel', cmOverview())}
+  ${ref('Meta-model', tbl(['Patroon','Meta-vraag','Effect','In je coaching'], Object.values(MM).map(p=>[`<b>${p.n}</b><br><span class="muted">${p.g}</span>`, esc(p.q), esc(p.e), phChips(p.p)+cmChips(p.cm)+'<br>'+esc(p.c)])))}
+  ${ref('Vooronderstellingen van taal', tbl(['Soort','Herken je aan'], Object.values(PRESUP).map(p=>[`<b>${p.n}</b>`, esc(p.d)])))}
+  ${ref('Milton-model', `<p>Zinnen vol weglatingen, vervormingen en generalisaties: de luisteraar vult zelf de betekenis in. Koppel met “en” en “terwijl” wat er is aan wat je wilt dat er gebeurt.</p>${tbl(['Patroon','In je coaching'], Object.values(MILTON).map(p=>[`<b>${p.n}</b>`, phChips(p.p)+'<br>'+esc(p.c)]))}`)}
+  ${ref('Oplossingsgerichte vragen', tbl(['Vraagtype','Voorbeeld','In je coaching'], [['Schaalvraag','Op een schaal van 0 tot 10, waar sta je nu?',OGW.sc.c,'sc'],['Eerdere successen','Wanneer ging het al een beetje beter?',OGW.es.c,'es'],['Gewenste situatie','Wat wil je in plaats van het probleem?',OGW.gs.c,'gs'],['Platform','Wat heb je al bereikt?',OGW.pl.c,'pl'],['Uitzondering','Wanneer had je hier iets minder last van?',OGW.uz.c,'uz'],['Wonder','…waaraan zul je merken dat het wonder heeft plaatsgevonden?',OGW.wo.c,'wo'],['Perspectiefwisseling','Waaraan zouden anderen merken dat het beter gaat?',OGW.pw.c,'pw'],['Coping','Hoe houd je het vol?',OGW.co.c,'co']].map(r=>[esc(r[0]),esc(r[1]),phChips(OGW[r[3]].p)+cmChips(OGW[r[3]].cm)+'<br>'+esc(r[2])])) + `<p class="muted">Basishouding: als iets werkt, doe er meer van. Er zijn altijd uitzonderingen. Kleine stappen leiden tot grote veranderingen. Leading from one step behind.</p>`)}
+  ${ref('Meta Model III', `<ol class="plain">${ORDERS.mm3.s.map(s=>`<li>${esc(s)}</li>`).join('')}</ol><p class="muted">Begin → probleem → flip → oplossing → bevestig.</p>`)}
+  ${ref('Vliegermodel', tbl(['Deel','Kenmerken','Voorbeeldvraag'], [['Denkbrein links','lineair, logica, taal, goed/fout, verteller','Wat is het tegenovergestelde van dit probleem?'],['Denkbrein rechts','non-lineair, beelden, metaforen, mogelijkheden','Hoe ziet de oplossing eruit?'],['Voelbrein','lichaamssensaties, emoties, motivatie, keuzes','Waar in je lichaam voel je dat?'],['PFC','waarnemer, regisseur, baas in huis','Heb je gemerkt dat…?']]))}
+  ${ref('11 Sleutels voor een haalbare uitkomst', `<ol class="plain">${ORDERS.sleutels.s.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`)}
+  ${ref('Intake: coachmodel en SCORE', `<p><b>NLP Coachmodel</b></p><ol class="plain">${ORDERS2.intake.s.map(x=>`<li>${esc(x)}</li>`).join('')}</ol><p><b>SCORE-model</b></p><ul class="plain">${SCORE.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="muted">Het SCORE-model heeft een tijdsaspect: van verleden (oorzaak) via heden (symptomen) naar toekomst (uitkomst en effect), gedragen door de hulpbronnen.</p><p><b>Anamnese, onderdelen van de leidraad</b></p><p class="muted">${ANAM.map(esc).join(' · ')}</p>`)}
+  ${ref('Dubbele bindingen', tbl(['Soort','Voorbeeld'], DB.map((n,i)=>[`<b>${esc(n)}</b>`, esc(dbItems.find(x=>x.a===i).t)])))}
+  ${ref('Sleight of Mouth', `<p class="muted">Uitspraak: “${esc(SOM_STMT)}” Robert Dilts en Todd Epstein.</p>`+tbl(['Patroon','Voorbeeldantwoord'], SOM.map((n,i)=>[`<b>${esc(n)}</b>`, esc(somItems[i].t)])))}
+  ${ref('Frames en metaforen', tbl(['Frame','Kernvraag'], FRAMES.map((n,i)=>[`<b>${esc(n)}</b>`, esc(frameItems.find(x=>x.a===i).t)])) + `<p><b>Metaforen worden gebruikt omdat</b> ze niet bedreigend zijn, een onbewust zoekproces starten, minder weerstand geven en langer blijven hangen. Soorten: gezegde, beeldspraak, anekdote, verhalende metafoor.</p>`)}
+  ${ref('The Work van Byron Katie', `<ol class="plain">${ORDERS2.katie.s.map(x=>`<li>${esc(x)}</li>`).join('')}</ol><p><b>Omkeringen</b> van “Paul moet mij waarderen”: op jezelf (“Ik moet mijzelf waarderen”), op de ander (“Ik moet Paul waarderen”), het tegenovergestelde (“Noem drie voorbeelden van hoe Paul jou waardeert”). Vraag na elke omkering: is het even waar of meer waar?</p><p class="muted"><span class="chip">aanvulling</span> Judge-Your-Neighbor-werkblad: emotie, willen, advies, nodig, oordelen, nooit meer.</p>`)}
+  ${ref('Bevrijdende taal van John Overdurf', tbl(['Niveau','Vraagwoord','Voorbeeld'], [['Identiteit','Wie','Wie zou je zijn als je niet jezelf was?'],['Materie','Wat','Wat zou je niet zijn / wat zou het zijn om niet jij te zijn?'],['Energie','Hoe','Hoe zou je zijn als je niet jezelf was?'],['Ruimte','Waar','Waar zou je zijn als je hier niet was?'],['Tijd','Wanneer','Wanneer zou je zijn als je nu niet jezelf was?']]) + `<p><b>Relatievragen:</b> wat is de relatie tussen “het een” en “iets anders”? Vraag tussendoor “Wat gebeurt er nu?” en “Wat is alle ruimte ertussen?”. Bij een positieve shift: “Wat merk je in je lichaam?”</p><p><b>Rhizomatisch onderzoek:</b> verandering, onderlinge verbondenheid, veelvoudigheid, a-significante breuk, cartografie.</p><p><b>Default Mode Network:</b> een te actief DMN geeft identificatie, zelfpraat, piekeren, oordelen en houdt identiteit en filters in stand. Trance, bevrijdende taal en aandacht voor sensaties brengen het tot rust.</p>`)}
+  ${ref('Neurologische niveaus', tbl(['Niveau','Vraag','Voorbeeld'], NL_KEYS.slice().reverse().map(k=>[`<b>${esc(NL[k])}</b>`, esc(NLQ[k]), esc(nlItems.find(x=>x.a===k).t)])) + `<p class="muted">Robert Dilts, naar Gregory Bateson. Een hoger niveau organiseert de lagere; verandering op een hoger niveau werkt door op alle lagere. Een oplossing ligt nooit op het niveau waar het probleem wordt geconstateerd.</p>`)}
+  ${ref('Waarden', `<p>Waarden zijn waar we naartoe gaan of vandaan bewegen, uitgedrukt in nominalisaties, grotendeels onbewust, en ze sturen al het gedrag. Kernwaarden hangen samen met identiteit.</p><ol class="plain">${ORDERS3.wop.s.map(x=>`<li>${esc(x)}</li>`).join('')}</ol><p><b>Twee spaden diep</b></p><ol class="plain">${ORDERS3.spaden.s.map(x=>`<li>${esc(x)}</li>`).join('')}</ol><p class="muted">Conflicten: opeenvolgend (binnen één waarde, benaderen en vermijden, bijv. geld en armoede) of gelijktijdig (tussen waarden, bijv. geld en vrijheid). Richtingsfilter: naar-toe of weg-van.</p>`)}
+  ${ref('Ego-toestanden (functioneel)', tbl(['Toestand','Basis','Positief','Negatief'], [['Kritische Ouder','normen','grenzen stellend, eisen stellen, op rechten staan','autoritair, oordelend, kleineren'],['Voedende Ouder','waarden','geruststellend, aanmoedigend, beschermend','betuttelend, klein houden, afhankelijk houden'],['Volwassene','logica en ratio','logisch denkend, realistisch','eindeloos doordenken, geen besluiten nemen'],['Aangepast Kind','verwachtingen','gehoorzaam, geduldig, tolerant','passief, klagend, afhankelijk'],['Vrij Kind','behoeften en gevoelens','creatief, spontaan, eigen behoeften','storend, slordig, eigengereid']]) + `<p class="muted">Kernwoorden: Ouder “Ik of jij moet…”, Volwassene “Ik denk… Ben me bewust…”, Kind “Ik voel… ik wil… ik heb… nodig”.</p>`)}
+  ${ref('Drivers en allowers', tbl(['Driver','Allower'], DRIVERS.map((d,i)=>[`<b>${d}</b>`, ALLOW[i]])) + `<p class="muted">Drivers zijn kwaliteiten en voorwaarden voor succes, en ook een valkuil wanneer je erin doorslaat. Allowers: Julie Hay.</p>`, true)}
+  ${ref('Stoppers', `<ul class="plain">${stopperItems.map(s=>`<li><b>${STOPPERS[s.a]}</b> — ${esc(s.t)}</li>`).join('')}</ul>`)}
+  ${ref('Strokes', `<p>Een stroke is een eenheid van erkenning: verbaal of non-verbaal, positief of negatief, voorwaardelijk of onvoorwaardelijk. Elke stroke is beter dan geen stroke.</p><p class="muted">Beperkende overtuigingen: geef geen strokes als je ze te geven hebt · vraag niet om strokes · accepteer geen strokes die je graag wilt · weiger geen strokes die je niet wilt · geef geen strokes aan jezelf · strokes waarom gevraagd wordt zijn minder waard.</p>`)}
+  ${ref('Drama- en winnaarsdriehoek', tbl(['Drama','Winnaar'], [['Aanklager','Assertief en kwetsbaar'],['Redder','Coach en zorgzaam'],['Slachtoffer','Eerlijk en verantwoordelijk']]) + `<p class="muted">Winnaarsdriehoek: Acey Choy (1990).</p>`)}
+  </div>`;
+}
+
+function phaseOverview(){
+  const tools=[];
+  Object.values(MM).forEach(p=>tools.push({n:p.n, g:'Meta-model', p:p.p}));
+  Object.values(MILTON).forEach(p=>tools.push({n:p.n, g:'Milton', p:p.p}));
+  Object.values(OGW).forEach(p=>tools.push({n:p.n, g:'Oplossingsgericht', p:p.p}));
+  Object.keys(PRESUP).forEach(k=>tools.push({n:PRESUP[k].n, g:'Vooronderstellingen van taal', p:PRESUPC[k].p}));
+  ['Upchunken','Downchunken','Lateraal chunken'].forEach((n,i)=>tools.push({n, g:'Chunken', p:CHUNKC[i].p}));
+  EGO.forEach((n,i)=>tools.push({n, g:'TA ego-toestand', p:EGOC[i].p}));
+  DRIVERS.forEach((n,i)=>tools.push({n, g:'TA driver', p:DRIVERC[i].p}));
+  tools.push({n:'Coachmodel', g:'Intake', p:['k'], cm:['h','g','r','b']},{n:'SCORE-model', g:'Intake', p:['k',1,3,4], cm:['h','b','g','r']},{n:'Anamnesevragen', g:'Intake', p:ANAMC.p, cm:ANAMC.cm});
+  DB.forEach((n,i)=>tools.push({n, g:'Dubbele bindingen', p:DBC[i].p}));
+  tools.push({n:'Sleight of Mouth', g:'Overtuigingen', p:SOMC.p, cm:SOMC.cm},{n:'Metaforen', g:'Overtuigingen', p:METAFC.p, cm:METAFC.cm});
+  FRAMES.forEach((n,i)=>tools.push({n, g:'Frames', p:FRAMEC[i].p, cm:FRAMEC[i].cm}));
+  tools.push({n:'Wondervraag', g:'Oplossingsgericht', p:[3], cm:['g']},{n:'Cirkeltechniek', g:'Oplossingsgericht', p:ORDERC.cirkel.p, cm:ORDERC.cirkel.cm},{n:'Vervolggesprek', g:'Oplossingsgericht', p:ORDERC.vervolg.p, cm:ORDERC.vervolg.cm},{n:'Meta Model III', g:'Oplossingsgericht', p:ORDERC1.mm3.p, cm:ORDERC1.mm3.cm});
+  tools.push({n:'Strokes', g:'TA', p:STROKEC.p, cm:STROKEC.cm},{n:'Egogram', g:'TA', p:ORDERC.egogram.p, cm:ORDERC.egogram.cm});
+  KATIE.forEach((n,i)=>tools.push({n:'The Work: '+n.replace(/^\d · /,''), g:'Byron Katie', p:KATIEC[i].p, cm:KATIEC[i].cm}));
+  tools.push({n:'Omkeringen', g:'Byron Katie', p:TURNC.p, cm:TURNC.cm});
+  tools.push({n:'Dubbele-niet-patroon en inductieve vraagwoorden', g:'Overdurf', p:INDUCC.p, cm:INDUCC.cm},{n:'Relatievragen', g:'Overdurf', p:RELC.p, cm:RELC.cm},{n:'Tegenovergestelde spel', g:'Overdurf', p:ORDERC.tegen.p, cm:ORDERC.tegen.cm},{n:'Rhizomatisch onderzoek', g:'Overdurf', p:RHIZC.p, cm:RHIZC.cm},{n:'Achterover in het NIETS', g:'Overdurf', p:ORDERC.niets.p, cm:ORDERC.niets.cm},{n:'Alpha Sequence', g:'Overdurf', p:[2]},{n:'STP', g:'Overdurf', p:ORDERC1.stp.p, cm:ORDERC1.stp.cm});
+  NL_KEYS.forEach(k=>tools.push({n:'Cliënt op '+NL[k].toLowerCase(), g:'Neurologische niveaus', p:NLC[k].p, cm:NLC[k].cm}));
+  tools.push({n:'Een niveau hoger', g:'Neurologische niveaus', p:NLUPC.p, cm:NLUPC.cm},{n:'Logical Level Alignment', g:'Neurologische niveaus', p:ORDER_COACH.lla.p, cm:ORDER_COACH.lla.cm},{n:'Waarden opvragen', g:'Waarden', p:ORDER_COACH.wop.p, cm:ORDER_COACH.wop.cm},{n:'Middel of waarde', g:'Waarden', p:WAARDEC.p, cm:WAARDEC.cm},{n:'Naar-toe / weg-van', g:'Waarden', p:['k',3], cm:['g','b']},{n:'Conflicten in waarden', g:'Waarden', p:INCC.p, cm:INCC.cm});
+  tools.push({n:'Allowers', g:'TA', p:ALLOWC.p, cm:ALLOWC.cm},{n:'Stoppers', g:'TA', p:STOPC.p, cm:STOPC.cm},{n:'Drama- en winnaarsdriehoek', g:'TA', p:['k']});
+  window.__tools=tools;
+  return `<p class="muted">Welke taal en modellen je in welke fase het meest inzet. Een hulpmiddel om te kiezen, geen vaste regel.</p>`+
+    PH_ORDER.map(f=>{const list=tools.filter(t=>(t.p||[]).includes(f)); const groups=[...new Set(list.map(t=>t.g))];
+      return `<div class="stack-s"><span class="ph" style="align-self:flex-start">${esc(PH[f])}</span>${groups.map(g=>`<p><b>${esc(g)}:</b> ${list.filter(t=>t.g===g).map(t=>esc(t.n)).join(', ')}</p>`).join('')}</div>`}).join('');
+}
+
+function cmOverview(){
+  phaseOverview(); const tools=window.__tools||[];
+  return `<p class="muted">Het NLP Coachmodel: van huidige naar gewenste situatie, met hulpbronnen en interventies, ondanks de belemmeringen. Hieronder per element de taal en modellen die erbij helpen.</p>`+
+    CM_ORDER.map(f=>{const list=tools.filter(t=>(t.cm||[]).includes(f)); const groups=[...new Set(list.map(t=>t.g))];
+      return `<div class="stack-s"><span class="ph cmc" style="align-self:flex-start">${esc(CM[f])}</span>${groups.map(g=>`<p><b>${esc(g)}:</b> ${list.filter(t=>t.g===g).map(t=>esc(t.n)).join(', ')}</p>`).join('')}</div>`}).join('');
+}
+function voortgang(){
+  const all=DECKS.flatMap(keysOf), seen=all.filter(k=>S.items[k]).length, solid=all.filter(k=>rec(k).box>=3).length;
+  return `<div class="stack"><div class="stack-s"><span class="eyebrow">Hoe staat het ervoor</span><h1>Voortgang</h1></div>
+    <div class="stat"><div><b>${streak()}</b><span>dagen op rij</span></div><div><b>${seen}</b><span>van ${all.length} gezien</span></div><div><b>${solid}</b><span>stevig beheerst</span></div></div>
+    <p class="muted">Een item is stevig beheerst als je het drie keer achter elkaar goed had, verspreid over dagen. Een fout zet het twee vakjes terug.</p>
+    ${[1,2,3,4,5,6].map(m=>`<section class="module"><h2>${m} · ${esc(MODULES[m])}</h2>${DECKS.filter(d=>d.mod===m).sort((a,b)=>mastery(a)-mastery(b)).map(d=>{
+      const ks=keysOf(d); return `<div class="deck" style="cursor:default"><span class="t">${esc(d.title)}</span><span class="n">${Math.round(mastery(d)*100)}%</span><span class="d">${ks.filter(k=>S.items[k]).length} van ${ks.length} gezien</span><span class="boxes" aria-hidden="true">${ks.map(k=>`<i style="background:${rec(k).box>=3?'var(--accent)':rec(k).box>0?'var(--kite)':'var(--sunk)'}"></i>`).join('')}</span></div>`}).join('')}</section>`).join('')}
+    <button type="button" class="ghost" id="reset">Voortgang wissen</button><p class="muted" id="reset-msg" hidden>Tik nog een keer om alles te wissen.</p>
+    <p class="muted">Je voortgang wordt alleen in deze browser bewaard.</p>
+  </div>`;
+}
+function render(){
+  renderTabs();
+  $('#app').innerHTML=({vandaag,oefenen,naslag,voortgang})[view]();
+  document.querySelectorAll('[data-deck]').forEach(b=>b.onclick=()=>startDeck(b.dataset.deck));
+  const go=$('#go'); if(go) go.onclick=startToday;
+  document.querySelectorAll('[data-min]').forEach(b=>b.onclick=()=>{S.min=+b.dataset.min; save(); render()});
+  const r=$('#reset'); if(r){let armed=false; r.onclick=()=>{if(!armed){armed=true; $('#reset-msg').hidden=false; r.textContent='Ja, wis alles'; return} S={items:{},days:[],min:S.min}; save(); render()}}
+}
+
+/* ============ SESSIE ============ */
+let Q=[], qi=0, score=0;
+function startToday(){
+  const n={5:8,10:15,20:30}[S.min]||15;
+  const pool=DECKS.flatMap(d=>d.items.map((_,i)=>({d:d.id,i,k:d.id+':'+i})));
+  const dueL=shuffle(pool.filter(p=>due(p.k))).sort((a,b)=>rec(a.k).box-rec(b.k).box);
+  let list=dueL.slice(0,n); if(list.length<n) list=list.concat(shuffle(pool.filter(p=>!list.includes(p))).slice(0,n-list.length));
+  openSession(shuffle(list), 'Oefenset van vandaag');
+}
+function startDeck(id){
+  const d=deckById(id); openSession(shuffle(d.items.map((_,i)=>({d:id,i,k:id+':'+i}))), d.title);
+}
+let title='';
+function openSession(list,t){Q=list; qi=0; score=0; title=t; $('#session').hidden=false; document.body.style.overflow='hidden'; show()}
+function closeSession(){$('#session').hidden=true; document.body.style.overflow=''; render()}
+function head(){
+  return `<div class="s-head"><button type="button" class="close" id="x" aria-label="Stoppen">✕</button><div class="progress" aria-hidden="true"><i style="width:${qi/Q.length*100}%"></i></div><span class="count">${Math.min(qi+1,Q.length)}/${Q.length}</span></div>`;
+}
+function show(){
+  const el=$('#session');
+  if(qi>=Q.length){
+    el.innerHTML=`<div class="in"><div class="stack done"><span class="eyebrow">${esc(title)}</span><div class="big">${score}/${Q.length}</div><h2>${score===Q.length?'Alles raak.':score>=Q.length*.7?'Sterk geoefend.':'Goed bezig, dit komt terug.'}</h2><p class="muted">Wat nog niet zat, zie je de komende dagen vaker terug.</p></div><div class="spacer"></div><button type="button" class="primary" id="x">Klaar</button></div>`;
+    $('#x').onclick=closeSession; $('#x').focus(); return;
+  }
+  const {d:id,i,k}=Q[qi], d=deckById(id), it=d.items[i];
+  if(d.kind==='order') return showOrder(el,d,it,k);
+  let opts, correct, ask=d.ask, text=it.t, one=d.one;
+  if(d.kind==='mmq'){
+    const others=shuffle(mmItems.filter(x=>x.a!==it.a)).slice(0,3).map(x=>x.q);
+    opts=shuffle([it.q,...others]); correct=opts.indexOf(it.q); ask='Welke meta-vraag past hier het best?'; one=true;
+  } else if(d.perItem){
+    const order=shuffle(it.o.map((_,j)=>j)); opts=order.map(j=>it.o[j]); correct=order.indexOf(it.a); ask='';
+  } else {
+    const labels=d.optMap?Object.keys(d.optMap):d.options.map((_,j)=>j);
+    const name=(x)=>d.optMap?d.optMap[x].n:d.options[x];
+    let pickL=labels; if(labels.length>6 && d.id!=='fase') pickL=shuffle([it.a,...shuffle(labels.filter(x=>x!==it.a)).slice(0,5)]);
+    else if(!d.one && d.id!=='fase') pickL=shuffle(labels);
+    opts=pickL.map(name); correct=pickL.indexOf(it.a);
+  }
+  el.innerHTML=`<div class="in">${head()}
+    <div class="card"><span class="eyebrow">${esc(d.title)} ${it.src?'<span class="chip">aanvulling</span>':''}</span>
+      ${ask?`<p class="muted">${esc(ask)}</p>`:''}
+      <p class="quote ${it.plain||d.perItem?'plain':''}">${esc(text)}</p></div>
+    <div class="opts ${one?'one':''}" id="opts">${opts.map((o,j)=>`<button type="button" class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+    <div id="fb"></div></div>`;
+  $('#x').onclick=closeSession;
+  el.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answer(+b.dataset.j, correct, opts, d, it, k));
+}
+function answer(j, correct, opts, d, it, k){
+  const ok=j===correct; mark(k,ok); if(ok) score++;
+  document.querySelectorAll('#opts .opt').forEach((b,x)=>{b.disabled=true; if(x===correct) b.classList.add('right'); else if(x===j) b.classList.add('wrong')});
+  const why=it.w || (d.why?d.why(it):'');
+  const tip=d.tip?d.tip(it):''; const coach=d.coach?d.coach(it):''; const nlNote=(it.nl && d.id!=='nlniv')?`<p class="tip"><b>Neurologisch niveau</b><br><span class="ph nlc">${esc(NL[it.nl])}</span> De cliënt beschrijft het probleem op dit niveau. De oplossing ligt op een ander, meestal hoger niveau.</p>`:'';
+  const verdict=ok?pick(GOOD):'Bijna.';
+  const lead=ok?'':`Jij koos “${esc(opts[j])}”. Het is “${esc(opts[correct])}”.`;
+  $('#fb').innerHTML=`<div class="fb ${ok?'ok':'no'}" role="status"><span class="v">${verdict}</span>${lead?`<p>${lead}</p>`:''}${why?`<p>${esc(why)}</p>`:''}${tip?`<p class="tip"><b>Nog sterker</b><br>${esc(tip)}</p>`:''}${nlNote}${coachBlock(coach)}</div>
+    <button type="button" class="primary" id="next" style="margin-top:12px">Volgende</button>`;
+  $('#next').onclick=()=>{qi++; show(); $('#session').scrollTo(0,0)}; $('#next').focus();
+}
+function showOrder(el,d,it,k){
+  let pool=shuffle(it.s.map((s,j)=>j)), seq=[];
+  const draw=()=>{
+    el.innerHTML=`<div class="in">${head()}
+      <div class="card"><span class="eyebrow">${esc(d.title)}</span><p class="quote plain" style="font-size:1.15rem">${esc(it.t)}</p><p class="muted">Tik de stappen aan in de goede volgorde. Tik een gekozen stap om hem terug te zetten.</p></div>
+      <div class="seq" id="seq">${seq.length?seq.map((j,n)=>`<button type="button" class="step" data-s="${n}"><span class="no">${n+1}</span><span>${esc(it.s[j])}</span></button>`).join(''):'<span class="empty">Jouw volgorde komt hier.</span>'}</div>
+      <div class="pool">${pool.map(j=>`<button type="button" class="step" data-p="${j}"><span class="no">+</span><span>${esc(it.s[j])}</span></button>`).join('')}</div>
+      <div id="fb">${pool.length===0?'<button type="button" class="primary" id="check">Controleer</button>':''}</div></div>`;
+    $('#x').onclick=closeSession;
+    el.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{const j=+b.dataset.p; pool=pool.filter(x=>x!==j); seq.push(j); draw()});
+    el.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{const n=+b.dataset.s; pool.push(seq[n]); seq.splice(n,1); draw()});
+    const c=$('#check'); if(c) c.onclick=check;
+  };
+  const check=()=>{
+    const right=seq.filter((j,n)=>j===n).length, ok=right===seq.length; mark(k,ok); if(ok) score++;
+    el.querySelectorAll('#seq .step').forEach((b,n)=>{b.disabled=true; b.classList.add(seq[n]===n?'right':'wrong')});
+    el.querySelector('.pool').innerHTML='';
+    $('#fb').innerHTML=`<div class="fb ${ok?'ok':'no'}" role="status"><span class="v">${ok?pick(GOOD):right+' van '+seq.length+' op de goede plek.'}</span>
+      ${ok?'':`<p><b>De volgorde:</b></p><ol class="plain">${it.s.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`}
+      ${it.w?`<p class="tip"><b>Nog sterker</b><br>${esc(it.w)}</p>`:''}${coachBlock(ORDER_COACH[it.key])}</div>
+      <button type="button" class="primary" id="next" style="margin-top:12px">Volgende</button>`;
+    $('#next').onclick=()=>{qi++; show(); $('#session').scrollTo(0,0)}; $('#next').focus();
+  };
+  draw();
+}
+render();
+</script>
+
+</body>
+</html>
